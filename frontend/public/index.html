@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#16a34a" />
+    <meta
+      name="description"
+      content="FoodBridge – Connecting food donors with NGOs to reduce food waste and fight hunger. Real-time food donation platform."
+    />
+    <meta property="og:title" content="FoodBridge – Reduce Waste, Feed Lives" />
+    <meta property="og:description" content="Join thousands of donors and NGOs reducing food waste together." />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>FoodBridge – Reduce Waste, Feed Lives</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(function (reg) { console.log('SW registered:', reg.scope); })
+            .catch(function (err) { console.log('SW registration failed:', err); });
+        });
+      }
+    </script>
+  </body>
+</html>
