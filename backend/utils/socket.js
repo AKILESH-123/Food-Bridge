@@ -2,10 +2,11 @@ let io;
 
 const initSocket = (server) => {
   const { Server } = require('socket.io');
+  const clientUrl = process.env.CLIENT_URL?.trim() || 'http://localhost:3000';
 
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:3000',
+      origin: clientUrl,
       methods: ['GET', 'POST'],
     },
   });

@@ -9,10 +9,13 @@ const sequelize = new Sequelize(
     port: parseInt(process.env.DB_PORT) || 3306,
     dialect: 'mysql',
     logging: false,
+    dialectOptions: {
+      connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '10000', 10),
+    },
     pool: {
       max: 10,
       min: 0,
-      acquire: 30000,
+      acquire: 15000,
       idle: 10000,
     },
   }
@@ -23,12 +26,14 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log('✅ MySQL Connected successfully');
 
-    // Sync all models (creates tables if they don't exist)
-    await sequelize.sync({ alter: true });
-    console.log('✅ Database tables synced');
+    const shouldSyncSchema = process.env.DB_SYNC === 'true' || process.env.NODE_ENV !== 'production';
+    if (shouldSyncSchema) {
+      await sequelize.sync({ alter: true });
+      console.log('✅ Database tables synced');
+    }
   } catch (error) {
     console.error(`❌ MySQL connection error: ${error.message}`);
-    process.exit(1);
+    throw error;
   }
 };
 

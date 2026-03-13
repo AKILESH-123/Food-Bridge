@@ -19,7 +19,7 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import api from '../services/api';
+import api, { buildBackendUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -148,7 +148,7 @@ export default function DonationDetail() {
             {images.length > 0 ? (
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
                 <img
-                  src={`http://localhost:5000${images[selectedImage]}`}
+                  src={buildBackendUrl(images[selectedImage])}
                   alt={donation.title}
                   className="w-full h-64 object-cover"
                 />
@@ -157,7 +157,7 @@ export default function DonationDetail() {
                     {images.map((img, i) => (
                       <button key={i} onClick={() => setSelectedImage(i)}>
                         <img
-                          src={`http://localhost:5000${img}`}
+                          src={buildBackendUrl(img)}
                           alt=""
                           className={`w-14 h-14 object-cover rounded-lg border-2 transition-all ${
                             selectedImage === i ? 'border-green-500' : 'border-transparent'

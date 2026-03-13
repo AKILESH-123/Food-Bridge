@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import { configuredBackendOrigin } from '../services/api';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 
 const SocketContext = createContext(null);
+
+const socketBaseUrl = configuredBackendOrigin || window.location.origin.replace(/:3000$/, ':5000');
 
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
@@ -20,10 +23,9 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const newSocket = io(
-      process.env.REACT_APP_SOCKET_URL || window.location.origin.replace('3000', '5000'),
-      { transports: ['websocket', 'polling'] }
-    );
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || socketBaseUrl, {
+      transports: ['websocket', 'polling'],
+    });
 
     newSocket.on('connect', () => {
       newSocket.emit('join', user._id);

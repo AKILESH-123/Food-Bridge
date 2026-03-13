@@ -1,7 +1,25 @@
 import axios from 'axios';
 
+const configuredApiUrl = process.env.REACT_APP_API_URL?.trim();
+export const configuredBackendOrigin = configuredApiUrl
+  ? configuredApiUrl.replace(/\/+$/, '').replace(/\/api$/, '')
+  : null;
+const normalizedApiBaseUrl = configuredApiUrl
+  ? `${configuredBackendOrigin}/api`
+  : '/api';
+
+export const buildBackendUrl = (resourcePath = '') => {
+  const normalizedPath = resourcePath.startsWith('/') ? resourcePath : `/${resourcePath}`;
+
+  if (!configuredApiUrl) {
+    return normalizedPath;
+  }
+
+  return `${configuredBackendOrigin}${normalizedPath}`;
+};
+
 const api = axios.create({
-  baseURL: 'https://food-bridge-lt6e.onrender.com/api',
+  baseURL: normalizedApiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
 });
 

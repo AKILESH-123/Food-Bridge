@@ -12,7 +12,6 @@ import {
   XCircle,
   CheckCircle2,
   AlertCircle,
-  Filter,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';

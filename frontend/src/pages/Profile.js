@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import api from '../services/api';
+import api, { buildBackendUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -116,7 +116,7 @@ export default function Profile() {
     );
   }
 
-  const avatarSrc = preview || (user?.profileImage ? `http://localhost:5000${user.profileImage}` : null);
+  const avatarSrc = preview || (user?.profileImage ? buildBackendUrl(user.profileImage) : null);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
