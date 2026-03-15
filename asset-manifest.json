@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/Food-Bridge/static/css/main.f68797d0.css",
-    "main.js": "/Food-Bridge/static/js/main.8004ffdb.js",
-    "index.html": "/Food-Bridge/index.html",
-    "main.f68797d0.css.map": "/Food-Bridge/static/css/main.f68797d0.css.map",
-    "main.8004ffdb.js.map": "/Food-Bridge/static/js/main.8004ffdb.js.map"
+    "main.css": "./static/css/main.1724bfe7.css",
+    "main.js": "./static/js/main.254c55bc.js",
+    "index.html": "./index.html",
+    "main.1724bfe7.css.map": "./static/css/main.1724bfe7.css.map",
+    "main.254c55bc.js.map": "./static/js/main.254c55bc.js.map"
   },
   "entrypoints": [
-    "static/css/main.f68797d0.css",
-    "static/js/main.8004ffdb.js"
+    "static/css/main.1724bfe7.css",
+    "static/js/main.254c55bc.js"
   ]
 }
