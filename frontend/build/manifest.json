@@ -1,0 +1,8 @@
+{
+  "short_name": "FoodBridge",
+  "name": "FoodBridge - Food Donation Platform",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#16a34a",
+  "background_color": "#ffffff"
+}

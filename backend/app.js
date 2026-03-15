@@ -1,14 +1,21 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+const { isAllowedOrigin } = require('./config/origins');
+
 const app = express();
-const clientUrl = process.env.CLIENT_URL?.trim() || 'http://localhost:3000';
+const frontendBuildPath = path.resolve(__dirname, '../frontend/build');
+const shouldServeFrontend =
+  process.env.SERVE_FRONTEND !== 'false' && fs.existsSync(path.join(frontendBuildPath, 'index.html'));
 
 app.use(
   cors({
-    origin: clientUrl,
+    origin(origin, callback) {
+      return callback(null, isAllowedOrigin(origin));
+    },
     credentials: true,
   })
 );
@@ -25,6 +32,10 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/stats', require('./routes/stats'));
 
+if (shouldServeFrontend) {
+  app.use(express.static(frontendBuildPath));
+}
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
@@ -34,6 +45,12 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV,
   });
 });
+
+if (shouldServeFrontend) {
+  app.get(/^(?!\/api\/).*/, (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {

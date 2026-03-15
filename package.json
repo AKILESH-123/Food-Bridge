@@ -1,4 +1,16 @@
 {
+  "name": "foodbridge",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "start": "npm --workspace backend start",
+    "build": "npm --workspace frontend run build",
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:frontend": "npm --workspace frontend start"
+  },
   "dependencies": {
     "gh-pages": "^6.3.0"
   }

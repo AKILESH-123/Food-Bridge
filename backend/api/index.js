@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const { isAllowedOrigin, getPrimaryClientOrigin } = require('../config/origins');
+
 let connectDB;
 let app;
 let appInitialized = false;
@@ -7,8 +9,13 @@ let appInitialized = false;
 let dbReadyPromise;
 
 function resolveClientOrigin(req) {
-  const configuredOrigin = process.env.CLIENT_URL?.trim();
-  return configuredOrigin || req.headers.origin || '*';
+  const requestOrigin = req.headers.origin;
+
+  if (isAllowedOrigin(requestOrigin)) {
+    return requestOrigin || getPrimaryClientOrigin() || '*';
+  }
+
+  return getPrimaryClientOrigin() || '*';
 }
 
 function ensureAppInitialized() {
