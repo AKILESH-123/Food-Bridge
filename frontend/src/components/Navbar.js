@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import api from '../services/api';
+import api, { buildBackendUrl } from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
 
 const Navbar = () => {
@@ -213,7 +213,7 @@ const Navbar = () => {
                   >
                     <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden">
                       {user.profileImage ? (
-                        <img src={user.profileImage} alt={user.name} className="w-full h-full object-cover" />
+                        <img src={buildBackendUrl(user.profileImage)} alt={user.name} className="w-full h-full object-cover" />
                       ) : (
                         user.name?.charAt(0).toUpperCase()
                       )}
@@ -265,11 +265,11 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <div className="hidden md:flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Link to="/login" className="btn-ghost text-sm">
                   Login
                 </Link>
-                <Link to="/register" className="btn-primary text-sm">
+                <Link to="/register" className="hidden md:flex btn-primary text-sm">
                   Get Started
                 </Link>
               </div>

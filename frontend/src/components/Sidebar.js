@@ -11,6 +11,7 @@ import {
   Package,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { buildBackendUrl } from '../services/api';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -61,7 +62,7 @@ const Sidebar = () => {
         <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
           <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
             {user?.profileImage ? (
-              <img src={user.profileImage} alt={user?.name} className="w-full h-full object-cover" />
+              <img src={buildBackendUrl(user.profileImage)} alt={user?.name} className="w-full h-full object-cover" />
             ) : (
               user?.name?.charAt(0).toUpperCase()
             )}

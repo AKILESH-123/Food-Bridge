@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { format, isPast } from 'date-fns';
+import { buildBackendUrl } from '../services/api';
 
 const categoryConfig = {
   cooked: { icon: UtensilsCrossed, color: 'bg-orange-100 text-orange-600', label: 'Cooked Food' },
@@ -55,7 +56,7 @@ const DonationCard = ({ donation, onAction, actionLabel, actionVariant = 'primar
       <div className="relative">
         {donation.images?.length > 0 ? (
           <img
-            src={donation.images[0]}
+            src={buildBackendUrl(donation.images[0])}
             alt={donation.title}
             className="w-full h-40 object-cover"
           />

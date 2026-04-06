@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import api from '../services/api';
+import api, { buildBackendUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { format, formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -158,7 +158,7 @@ export default function MyDonations() {
                     {/* Image / icon */}
                     <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-green-50 flex items-center justify-center">
                       {donation.images?.length > 0 ? (
-                        <img src={donation.images[0]} alt={donation.title} className="w-full h-full object-cover" />
+                        <img src={buildBackendUrl(donation.images[0])} alt={donation.title} className="w-full h-full object-cover" />
                       ) : (
                         <Package className="w-8 h-8 text-green-300" />
                       )}

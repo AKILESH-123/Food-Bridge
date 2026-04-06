@@ -28,7 +28,8 @@ const connectDB = async () => {
 
     const shouldSyncSchema = process.env.DB_SYNC === 'true' || process.env.NODE_ENV !== 'production';
     if (shouldSyncSchema) {
-      await sequelize.sync({ alter: true });
+      // Use alter: false to avoid excessive index creation that hits MySQL's 64-key limit
+      await sequelize.sync({ alter: false });
       console.log('✅ Database tables synced');
     }
   } catch (error) {

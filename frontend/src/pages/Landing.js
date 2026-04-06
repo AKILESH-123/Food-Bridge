@@ -89,21 +89,21 @@ const Landing = () => {
 
   const testimonials = [
     {
-      name: 'Priya Sharma',
+      name: 'Santhosh',
       role: 'Restaurant Owner, Mumbai',
       text: "FoodBridge helped us donate 200+ meals every week. It's incredibly easy and the NGOs are so responsive!",
       rating: 5,
       avatar: 'PS',
     },
     {
-      name: 'Mohammed Razak',
+      name: 'Nandakishore',
       role: 'Director, Helping Hands NGO',
       text: 'We used to struggle finding food sources. Now we receive real-time updates and can feed 500+ people daily.',
       rating: 5,
       avatar: 'MR',
     },
     {
-      name: 'Anita Verma',
+      name: 'Sudhir',
       role: 'Hotel Manager, Delhi',
       text: 'What was once wasted is now someone\'s meal. FoodBridge made it simple to give back to the community.',
       rating: 5,
@@ -141,11 +141,11 @@ const Landing = () => {
 
           {/* Right CTA */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Link to="/login" className="hidden sm:block px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:text-green-700 hover:bg-green-50 transition-all">
-              Login
+            <Link to="/login" className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:text-green-700 hover:bg-green-50 transition-all">
+              Sign In
             </Link>
             <Link to="/register" className="px-4 py-2 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 shadow-sm transition-all">
-              Get Started Free
+              Get Started
             </Link>
           </div>
         </div>
