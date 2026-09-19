@@ -19,7 +19,12 @@ const User = sequelize.define(
     },
     password: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true,
+    },
+    googleId: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      unique: true,
     },
     role: {
       type: DataTypes.ENUM('donor', 'ngo', 'admin'),
@@ -30,7 +35,7 @@ const User = sequelize.define(
     address: { type: DataTypes.TEXT, allowNull: true },
     city: { type: DataTypes.STRING(100), allowNull: true },
     state: { type: DataTypes.STRING(100), allowNull: true },
-    profileImage: { type: DataTypes.STRING(255), defaultValue: '' },
+    profileImage: { type: DataTypes.TEXT, defaultValue: '' },
     bio: { type: DataTypes.TEXT, allowNull: true },
     isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
     isActive: { type: DataTypes.BOOLEAN, defaultValue: true },

@@ -56,6 +56,16 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  const googleLogin = async (credential, role = 'donor') => {
+    const res = await api.post('/auth/google', { credential, role });
+    const { token, user: userData } = res.data;
+    localStorage.setItem('foodbridge_token', token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(normalizeUser(userData));
+    toast.success(`Welcome, ${userData.name}! 👋`);
+    return userData;
+  };
+
   const logout = () => {
     localStorage.removeItem('foodbridge_token');
     delete api.defaults.headers.common['Authorization'];
@@ -66,7 +76,7 @@ export const AuthProvider = ({ children }) => {
   const updateUser = (updatedUser) => setUser((prev) => normalizeUser({ ...prev, ...updatedUser }));
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, fetchUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, updateUser, fetchUser }}>
       {children}
     </AuthContext.Provider>
   );

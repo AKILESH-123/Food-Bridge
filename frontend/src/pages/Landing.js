@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Leaf,
   ArrowRight,
   UtensilsCrossed,
   Heart,
@@ -118,9 +117,11 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0 group">
-            <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center shadow-md group-hover:bg-green-700 transition-colors">
-              <Leaf className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="FoodBridge Logo"
+              className="w-9 h-9 rounded-xl object-contain shadow-md group-hover:scale-105 transition-transform"
+            />
             <span className="text-xl font-bold text-green-700">
               Food<span className="text-orange-500">Bridge</span>
             </span>
@@ -222,9 +223,11 @@ const Landing = () => {
               <div className="relative w-96 h-96">
                 {/* Main card */}
                 <div className="absolute inset-8 bg-white rounded-3xl shadow-2xl border border-green-100 p-6 flex flex-col items-center justify-center gap-4 animate-float">
-                  <div className="w-20 h-20 bg-green-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Leaf className="w-10 h-10 text-white" />
-                  </div>
+                  <img
+                    src="/logo.png"
+                    alt="FoodBridge Icon"
+                    className="w-20 h-20 rounded-2xl object-contain shadow-lg"
+                  />
                   <div className="text-center">
                     <div className="text-2xl font-black text-green-700">FoodBridge</div>
                     <div className="text-sm text-gray-500 mt-1">Connecting hearts through food</div>
@@ -416,9 +419,11 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-                <Leaf className="w-4 h-4 text-white" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="FoodBridge Logo"
+                className="w-7 h-7 rounded-lg object-contain"
+              />
               <span className="text-white font-bold">
                 Food<span className="text-orange-400">Bridge</span>
               </span>

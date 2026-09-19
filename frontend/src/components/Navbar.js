@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Menu,
   X,
-  Leaf,
   Bell,
   ChevronDown,
   User,
@@ -67,7 +66,7 @@ const Navbar = () => {
       await api.put('/notifications/mark-all-read');
       setUnreadCount(0);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch {}
+    } catch { }
   };
 
   const getDashboardPath = () => {
@@ -83,9 +82,11 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-glow transition-all duration-200">
-              <Leaf className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="FoodBridge Logo"
+              className="w-9 h-9 rounded-xl object-contain shadow-md group-hover:scale-105 transition-transform"
+            />
             <span className="text-xl font-bold text-green-700">
               Food<span className="text-orange-500">Bridge</span>
             </span>
@@ -95,22 +96,20 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-1">
             <Link
               to="/donations"
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                isActive('/donations')
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/donations')
+                ? 'bg-green-600 text-white shadow-md'
+                : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
+                }`}
             >
               <UtensilsCrossed className="w-4 h-4" />
               Donations
             </Link>
             <Link
               to="/leaderboard"
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                isActive('/leaderboard')
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/leaderboard')
+                ? 'bg-green-600 text-white shadow-md'
+                : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
+                }`}
             >
               <Trophy className="w-4 h-4" />
               Leaderboard
@@ -172,9 +171,8 @@ const Navbar = () => {
                             notifications.map((notif) => (
                               <div
                                 key={notif._id}
-                                className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
-                                  !notif.isRead ? 'bg-green-50/50' : ''
-                                }`}
+                                className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${!notif.isRead ? 'bg-green-50/50' : ''
+                                  }`}
                               >
                                 <div className="flex items-start gap-2">
                                   {!notif.isRead && (
@@ -213,7 +211,18 @@ const Navbar = () => {
                   >
                     <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden">
                       {user.profileImage ? (
-                        <img src={buildBackendUrl(user.profileImage)} alt={user.name} className="w-full h-full object-cover" />
+                        <img
+                          src={buildBackendUrl(user.profileImage)}
+                          alt={user.name}
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.parentElement) {
+                              e.currentTarget.parentElement.innerText = user.name?.charAt(0).toUpperCase() || 'U';
+                            }
+                          }}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         user.name?.charAt(0).toUpperCase()
                       )}

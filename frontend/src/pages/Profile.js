@@ -155,6 +155,10 @@ export default function Profile() {
                   <img
                     src={avatarSrc}
                     alt="Profile"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
                     className="w-20 h-20 rounded-full object-cover border-4 border-green-100"
                   />
                 ) : (

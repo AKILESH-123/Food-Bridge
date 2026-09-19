@@ -7,7 +7,6 @@ import {
   Trophy,
   User,
   LogOut,
-  Leaf,
   Package,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -49,9 +48,11 @@ const Sidebar = () => {
     <aside className="w-64 h-screen fixed top-0 left-0 bg-white border-r border-gray-100 flex flex-col shadow-sm z-40">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-        <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center shadow-md">
-          <Leaf className="w-5 h-5 text-white" />
-        </div>
+        <img
+          src="/logo.png"
+          alt="FoodBridge Logo"
+          className="w-9 h-9 rounded-xl object-contain shadow-md"
+        />
         <span className="text-xl font-bold text-green-700">
           Food<span className="text-orange-500">Bridge</span>
         </span>
@@ -62,7 +63,18 @@ const Sidebar = () => {
         <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
           <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
             {user?.profileImage ? (
-              <img src={buildBackendUrl(user.profileImage)} alt={user?.name} className="w-full h-full object-cover" />
+              <img
+                src={buildBackendUrl(user.profileImage)}
+                alt={user?.name}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  if (e.currentTarget.parentElement) {
+                    e.currentTarget.parentElement.innerText = user?.name?.charAt(0).toUpperCase() || 'U';
+                  }
+                }}
+                className="w-full h-full object-cover"
+              />
             ) : (
               user?.name?.charAt(0).toUpperCase()
             )}

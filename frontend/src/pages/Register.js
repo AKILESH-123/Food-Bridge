@@ -15,6 +15,7 @@ import {
   UtensilsCrossed,
   Heart,
 } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 
 const InputField = ({ name, label, type = 'text', placeholder, icon: Icon, required = false, form, onChange, fieldErrors, loading }) => (
@@ -48,7 +49,7 @@ const InputField = ({ name, label, type = 'text', placeholder, icon: Icon, requi
 );
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -112,6 +113,26 @@ const Register = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setLoading(true);
+      setError('');
+      const user = await googleLogin(credentialResponse.credential, form.role);
+      const path =
+        user.role === 'donor' ? '/dashboard/donor' : user.role === 'ngo' ? '/dashboard/ngo' : '/dashboard/admin';
+      navigate(path, { replace: true });
+    } catch (err) {
+      console.error('Google Sign In Error:', err);
+      setError(err.response?.data?.message || 'Google registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleFailure = () => {
+    setError('Google sign-in was unsuccessful. Please try again.');
   };
 
   const roles = [
@@ -277,6 +298,30 @@ const Register = () => {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-gray-400 font-medium">Or register with</span>
+            </div>
+          </div>
+
+          {/* Google Sign In Button */}
+          <div className="flex justify-center w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleFailure}
+              useOneTap={false}
+              theme="outline"
+              size="large"
+              width="100%"
+              text="signup_with"
+              shape="pill"
+            />
+          </div>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">

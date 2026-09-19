@@ -37,11 +37,11 @@ function ImpactChart({ donorImpactPoints, ngoImpactPoints, totalImpactPoints }) 
                 <span className="text-sm font-semibold text-gray-600 block mb-1">{bar.label}</span>
                 <span className={`text-2xl font-black ${bar.text} block mb-6`}>{bar.value.toLocaleString()}</span>
               </div>
-              
+
               <div className="w-full h-32 flex items-end justify-center bg-white/50 rounded-lg p-2 rounded-b-none border-b-2 border-white">
-                <div 
-                  className={`w-16 sm:w-20 rounded-t-xl shadow-sm transition-all duration-1000 ${bar.color}`} 
-                  style={{ height: `${height}%` }} 
+                <div
+                  className={`w-16 sm:w-20 rounded-t-xl shadow-sm transition-all duration-1000 ${bar.color}`}
+                  style={{ height: `${height}%` }}
                 />
               </div>
 
@@ -113,13 +113,13 @@ export default function Leaderboard() {
                 Celebrating the champions fighting food waste with every pickup and donation.
               </p>
             </div>
-            
+
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 px-4 py-2 rounded-xl flex items-center gap-3">
-               <Award className="w-5 h-5 text-green-600" />
-               <div>
-                  <p className="text-xs text-green-700 font-bold uppercase tracking-wider">Total Impact</p>
-                  <p className="text-lg font-black text-green-800 leading-tight">{totalImpactPoints.toLocaleString()} pts</p>
-               </div>
+              <Award className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="text-xs text-green-700 font-bold uppercase tracking-wider">Total Impact</p>
+                <p className="text-lg font-black text-green-800 leading-tight">{totalImpactPoints.toLocaleString()} pts</p>
+              </div>
             </div>
           </div>
 
@@ -131,33 +131,33 @@ export default function Leaderboard() {
             <>
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatsCard 
-                  title="Registered Donors" 
-                  value={donors.length} 
-                  icon={Package} 
-                  color="blue" 
+                <StatsCard
+                  title="Registered Donors"
+                  value={donors.length}
+                  icon={Package}
+                  color="blue"
                 />
-                <StatsCard 
-                  title="Active NGOs" 
-                  value={ngos.length} 
-                  icon={Heart} 
-                  color="green" 
+                <StatsCard
+                  title="Active NGOs"
+                  value={ngos.length}
+                  icon={Heart}
+                  color="green"
                 />
-                <StatsCard 
-                  title="Top Donor" 
-                  subtitle={topDonor ? topDonor.name : 'No donors yet'} 
-                  value={topDonor ? (topDonor.impactPoints || 0) : 0} 
-                  icon={Star} 
-                  color="yellow" 
-                  suffix=" pts" 
+                <StatsCard
+                  title="Top Donor"
+                  subtitle={topDonor ? topDonor.name : 'No donors yet'}
+                  value={topDonor ? (topDonor.impactPoints || 0) : 0}
+                  icon={Star}
+                  color="yellow"
+                  suffix=" pts"
                 />
-                <StatsCard 
-                  title="Top NGO" 
-                  subtitle={topNgo ? topNgo.name : 'No NGOs yet'} 
-                  value={topNgo ? (topNgo.impactPoints || 0) : 0} 
-                  icon={Trophy} 
-                  color="purple" 
-                  suffix=" pts" 
+                <StatsCard
+                  title="Top NGO"
+                  subtitle={topNgo ? topNgo.name : 'No NGOs yet'}
+                  value={topNgo ? (topNgo.impactPoints || 0) : 0}
+                  icon={Trophy}
+                  color="purple"
+                  suffix=" pts"
                 />
               </div>
 

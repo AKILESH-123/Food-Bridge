@@ -9,6 +9,11 @@ const normalizedApiBaseUrl = configuredApiUrl
   : '/api';
 
 export const buildBackendUrl = (resourcePath = '') => {
+  if (!resourcePath) return '';
+  if (resourcePath.startsWith('http://') || resourcePath.startsWith('https://') || resourcePath.startsWith('data:')) {
+    return resourcePath;
+  }
+
   const normalizedPath = resourcePath.startsWith('/') ? resourcePath : `/${resourcePath}`;
 
   if (!configuredApiUrl) {
