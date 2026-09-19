@@ -37,8 +37,8 @@ const DonorDashboard = () => {
     setLoading(true);
     try {
       const [statsRes, donationsRes] = await Promise.all([
-        api.get('/stats/donor'),
-        api.get('/donations/my?limit=20'),
+        api.get('/stats/donor?period=month'),
+        api.get('/donations/my?limit=20&period=month'),
       ]);
       setStats(statsRes.data.stats);
       setDonations(donationsRes.data.donations);

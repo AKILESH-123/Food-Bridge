@@ -79,7 +79,7 @@ exports.createDonation = async (req, res) => {
 // @route   GET /api/donations
 exports.getDonations = async (req, res) => {
   try {
-    const { status, category, city, urgent, page = 1, limit = 12 } = req.query;
+    const { status, category, city, urgent, page = 1, limit = 12, period } = req.query;
 
     const where = {};
     if (status) {
@@ -91,6 +91,13 @@ exports.getDonations = async (req, res) => {
     if (city) where.pickupCity = { [Op.like]: `%${city}%` };
     if (urgent === 'true') where.isUrgent = true;
     where.expiresAt = { [Op.gt]: new Date() };
+
+    if (period === 'month') {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      where.createdAt = { [Op.gte]: start, [Op.lt]: end };
+    }
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -379,9 +386,16 @@ exports.cancelDonation = async (req, res) => {
 // @route   GET /api/donations/my
 exports.getMyDonations = async (req, res) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, page = 1, limit = 10, period } = req.query;
     const where = { donorId: req.user.id };
     if (status) where.status = status;
+
+    if (period === 'month') {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      where.createdAt = { [Op.gte]: start, [Op.lt]: end };
+    }
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -406,11 +420,18 @@ exports.getMyDonations = async (req, res) => {
 // @route   GET /api/donations/assigned
 exports.getAssignedDonations = async (req, res) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, page = 1, limit = 10, period } = req.query;
     const where = {
       [Op.or]: [{ requestedById: req.user.id }, { assignedToId: req.user.id }],
     };
     if (status) where.status = status;
+
+    if (period === 'month') {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      where.createdAt = { [Op.gte]: start, [Op.lt]: end };
+    }
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
 

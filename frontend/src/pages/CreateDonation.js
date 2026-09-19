@@ -34,6 +34,7 @@ const CreateDonation = () => {
     title: '',
     description: '',
     category: '',
+    otherCategoryDetails: '',
     quantity: '',
     quantityUnit: 'kg',
     estimatedServings: '',
@@ -42,9 +43,8 @@ const CreateDonation = () => {
     pickupCity: '',
     specialInstructions: '',
     allergenInfo: '',
-    isVegetarian: false,
-    isVegan: false,
   });
+  const [dietType, setDietType] = useState(''); // '' | 'veg' | 'nonveg'
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -72,11 +72,15 @@ const CreateDonation = () => {
     if (!form.title.trim()) errs.title = 'Title is required';
     if (!form.description.trim()) errs.description = 'Description is required';
     if (!form.category) errs.category = 'Category is required';
+    if (form.category === 'other' && !form.otherCategoryDetails.trim()) {
+      errs.otherCategoryDetails = 'Please specify the type of food'
+    }
     if (!form.quantity || isNaN(form.quantity) || Number(form.quantity) <= 0) errs.quantity = 'Valid quantity is required';
     if (!form.expiresAt) errs.expiresAt = 'Expiry time is required';
     if (new Date(form.expiresAt) <= new Date()) errs.expiresAt = 'Expiry must be in the future';
     if (!form.pickupAddress.trim()) errs.pickupAddress = 'Pickup address is required';
     if (!form.pickupCity.trim()) errs.pickupCity = 'Pickup city is required';
+    if (!dietType) errs.dietType = 'Please select Veg or Non-Veg';
     return errs;
   };
 
@@ -91,7 +95,15 @@ const CreateDonation = () => {
     setLoading(true);
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([k, v]) => formData.append(k, v));
+      const mergedDescription =
+        form.category === 'other' && form.otherCategoryDetails.trim()
+          ? `${form.description}\n\nOther category: ${form.otherCategoryDetails.trim()}`
+          : form.description;
+
+      Object.entries({ ...form, description: mergedDescription }).forEach(([k, v]) => formData.append(k, v));
+      // Backend expects these boolean flags
+      formData.append('isVegetarian', dietType === 'veg');
+      formData.append('isVegan', false);
       images.forEach((img) => formData.append('images', img));
 
       const res = await api.post('/donations', formData, {
@@ -177,7 +189,14 @@ const CreateDonation = () => {
                     <button
                       key={cat.value}
                       type="button"
-                      onClick={() => { setForm((p) => ({ ...p, category: cat.value })); setErrors((p) => ({ ...p, category: '' })); }}
+                      onClick={() => {
+                        setForm((p) => ({
+                          ...p,
+                          category: cat.value,
+                          otherCategoryDetails: cat.value === 'other' ? p.otherCategoryDetails : '',
+                        }));
+                        setErrors((p) => ({ ...p, category: '', otherCategoryDetails: '' }));
+                      }}
                       className={`p-3 rounded-xl border-2 text-left transition-all ${
                         form.category === cat.value
                           ? 'border-green-500 bg-green-50'
@@ -191,6 +210,24 @@ const CreateDonation = () => {
                   ))}
                 </div>
                 {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
+
+                {form.category === 'other' && (
+                  <div className="mt-3">
+                    <label className="label">
+                      Specify Other <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="otherCategoryDetails"
+                      value={form.otherCategoryDetails}
+                      onChange={handleChange}
+                      placeholder="e.g. Sweets, biryani, snacks"
+                      className={`input-field ${errors.otherCategoryDetails ? 'border-red-400' : ''}`}
+                    />
+                    {errors.otherCategoryDetails && (
+                      <p className="text-red-500 text-xs mt-1">{errors.otherCategoryDetails}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Quantity */}
@@ -237,24 +274,23 @@ const CreateDonation = () => {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    name="isVegetarian"
-                    checked={form.isVegetarian}
-                    onChange={handleChange}
+                    checked={dietType === 'veg'}
+                    onChange={() => { setDietType('veg'); if (errors.dietType) setErrors((p) => ({ ...p, dietType: '' })); }}
                     className="w-4 h-4 accent-green-600"
                   />
-                  <span className="text-sm font-medium text-gray-700">🥦 Vegetarian</span>
+                  <span className="text-sm font-medium text-gray-700">🥦 Veg</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    name="isVegan"
-                    checked={form.isVegan}
-                    onChange={handleChange}
+                    checked={dietType === 'nonveg'}
+                    onChange={() => { setDietType('nonveg'); if (errors.dietType) setErrors((p) => ({ ...p, dietType: '' })); }}
                     className="w-4 h-4 accent-green-600"
                   />
-                  <span className="text-sm font-medium text-gray-700">🌱 Vegan</span>
+                  <span className="text-sm font-medium text-gray-700">🍗 Non-Veg</span>
                 </label>
               </div>
+              {errors.dietType && <p className="text-red-500 text-xs mt-1">{errors.dietType}</p>}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>

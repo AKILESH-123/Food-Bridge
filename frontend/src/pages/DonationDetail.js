@@ -121,9 +121,13 @@ export default function DonationDetail() {
   const status = STATUS_CONFIG[donation.status] || STATUS_CONFIG.available;
   const isExpiringSoon = donation.isUrgent;
   const timeLeft = formatDistanceToNow(new Date(donation.expiresAt), { addSuffix: true });
-  const isDonor = user && donation.donor && (user._id === donation.donor._id || user._id === donation.donor);
+  const currentUserId = user?._id || user?.id;
+  const donorId = donation?.donor?._id || donation?.donor?.id || donation?.donor;
+  const requestedById = donation?.requestedBy?._id || donation?.requestedBy?.id || donation?.requestedBy;
+
+  const isDonor = Boolean(currentUserId && donorId && String(currentUserId) === String(donorId));
   const isNGO = user && user.role === 'ngo';
-  const requestedByMe = user && donation.requestedBy && (user._id === String(donation.requestedBy._id || donation.requestedBy));
+  const requestedByMe = Boolean(currentUserId && requestedById && String(currentUserId) === String(requestedById));
 
   const images = donation.images && donation.images.length > 0 ? donation.images : [];
 
@@ -214,21 +218,18 @@ export default function DonationDetail() {
                 </div>
               </div>
 
-              {/* Dietary badges */}
-              {(donation.isVegetarian || donation.isVegan) && (
-                <div className="flex gap-2 mt-4">
-                  {donation.isVegetarian && (
-                    <span className="flex items-center gap-1 bg-green-50 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full border border-green-200">
-                      <Leaf className="w-3 h-3" /> Vegetarian
-                    </span>
-                  )}
-                  {donation.isVegan && (
-                    <span className="flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-200">
-                      🌱 Vegan
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* Dietary badge */}
+              <div className="flex gap-2 mt-4">
+                {donation.isVegetarian || donation.isVegan ? (
+                  <span className="flex items-center gap-1 bg-green-50 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full border border-green-200">
+                    <Leaf className="w-3 h-3" /> Veg
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 bg-red-50 text-red-700 text-xs font-bold px-2.5 py-1 rounded-full border border-red-200">
+                    🍗 Non-Veg
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Allergens & Special Instructions */}
@@ -326,7 +327,7 @@ export default function DonationDetail() {
                     <button
                       onClick={() => handleAction('cancel')}
                       disabled={actionLoading === 'cancel'}
-                      className="btn-outline w-full py-3 border-red-200 text-red-600 hover:bg-red-50"
+                      className="w-full py-3 rounded-xl border-2 border-red-500 text-sm font-semibold text-red-600 hover:bg-red-600 hover:text-white transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {actionLoading === 'cancel' ? (
                         <span className="flex items-center justify-center gap-2">

@@ -4,6 +4,11 @@ import toast from 'react-hot-toast';
 
 const AuthContext = createContext(null);
 
+const normalizeUser = (u) => {
+  if (!u) return u;
+  return { ...u, _id: u._id ?? u.id };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +22,7 @@ export const AuthProvider = ({ children }) => {
     try {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const res = await api.get('/auth/me');
-      setUser(res.data.user);
+      setUser(normalizeUser(res.data.user));
     } catch {
       localStorage.removeItem('foodbridge_token');
       delete api.defaults.headers.common['Authorization'];
@@ -36,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     const { token, user: userData } = res.data;
     localStorage.setItem('foodbridge_token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setUser(userData);
+    setUser(normalizeUser(userData));
     toast.success(`Welcome back, ${userData.name}! 👋`);
     return userData;
   };
@@ -46,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     const { token, user: userData } = res.data;
     localStorage.setItem('foodbridge_token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setUser(userData);
+    setUser(normalizeUser(userData));
     toast.success(`Welcome to FoodBridge, ${userData.name}! 🌱`);
     return userData;
   };
@@ -58,7 +63,7 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   };
 
-  const updateUser = (updatedUser) => setUser((prev) => ({ ...prev, ...updatedUser }));
+  const updateUser = (updatedUser) => setUser((prev) => normalizeUser({ ...prev, ...updatedUser }));
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, fetchUser }}>

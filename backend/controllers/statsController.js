@@ -47,12 +47,26 @@ exports.getDonorStats = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    const period = req.query.period;
+    const monthRange = (() => {
+      if (period !== 'month') return null;
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      return { start, end };
+    })();
+
+    const baseWhere = { donorId: userId };
+    if (monthRange) {
+      baseWhere.createdAt = { [Op.gte]: monthRange.start, [Op.lt]: monthRange.end };
+    }
+
     const [total, completed, active, impactData, recentDonations, user] = await Promise.all([
-      Donation.count({ where: { donorId: userId } }),
-      Donation.count({ where: { donorId: userId, status: 'completed' } }),
-      Donation.count({ where: { donorId: userId, status: { [Op.in]: ['available', 'requested', 'assigned'] } } }),
+      Donation.count({ where: baseWhere }),
+      Donation.count({ where: { ...baseWhere, status: 'completed' } }),
+      Donation.count({ where: { ...baseWhere, status: { [Op.in]: ['available', 'requested', 'assigned'] } } }),
       Donation.findOne({
-        where: { donorId: userId, status: 'completed' },
+        where: { ...baseWhere, status: 'completed' },
         attributes: [
           [fn('SUM', col('estimatedServings')), 'totalServings'],
           [fn('SUM', col('quantity')), 'totalKg'],
@@ -60,7 +74,7 @@ exports.getDonorStats = async (req, res) => {
         raw: true,
       }),
       Donation.findAll({
-        where: { donorId: userId },
+        where: baseWhere,
         include: [{ model: User, as: 'requestedBy', attributes: ['id', 'name', 'organizationName'] }],
         order: [['createdAt', 'DESC']],
         limit: 5,
@@ -92,17 +106,33 @@ exports.getNGOStats = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    const period = req.query.period;
+    const monthRange = (() => {
+      if (period !== 'month') return null;
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      return { start, end };
+    })();
+
+    const baseWhere = {
+      [Op.or]: [{ requestedById: userId }, { assignedToId: userId }],
+    };
+    if (monthRange) {
+      baseWhere.createdAt = { [Op.gte]: monthRange.start, [Op.lt]: monthRange.end };
+    }
+
     const [totalPickups, completed, active, impactData, recentPickups, user] = await Promise.all([
-      Donation.count({ where: { [Op.or]: [{ requestedById: userId }, { assignedToId: userId }] } }),
-      Donation.count({ where: { assignedToId: userId, status: 'completed' } }),
-      Donation.count({ where: { [Op.or]: [{ requestedById: userId }, { assignedToId: userId }], status: { [Op.in]: ['requested', 'assigned'] } } }),
+      Donation.count({ where: baseWhere }),
+      Donation.count({ where: { ...baseWhere, assignedToId: userId, status: 'completed' } }),
+      Donation.count({ where: { ...baseWhere, status: { [Op.in]: ['requested', 'assigned'] } } }),
       Donation.findOne({
-        where: { assignedToId: userId, status: 'completed' },
+        where: { ...baseWhere, assignedToId: userId, status: 'completed' },
         attributes: [[fn('SUM', col('estimatedServings')), 'totalServings']],
         raw: true,
       }),
       Donation.findAll({
-        where: { [Op.or]: [{ requestedById: userId }, { assignedToId: userId }] },
+        where: baseWhere,
         include: [{ model: User, as: 'donor', attributes: ['id', 'name', 'organizationName', 'city'] }],
         order: [['createdAt', 'DESC']],
         limit: 5,

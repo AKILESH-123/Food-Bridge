@@ -30,7 +30,7 @@ const NGODashboard = () => {
   const fetchStats = useCallback(async () => {
     setLoadingStats(true);
     try {
-      const res = await api.get('/stats/ngo');
+      const res = await api.get('/stats/ngo?period=month');
       setStats(res.data.stats);
     } catch (err) {
       console.error(err);
@@ -42,7 +42,7 @@ const NGODashboard = () => {
   const fetchAvailable = useCallback(async () => {
     setLoadingDonations(true);
     try {
-      const res = await api.get('/donations?status=available&limit=8');
+      const res = await api.get('/donations?status=available&limit=8&period=month');
       setAvailableDonations(res.data.donations);
     } catch (err) {
       console.error(err);
@@ -53,7 +53,7 @@ const NGODashboard = () => {
 
   const fetchMyPickups = useCallback(async () => {
     try {
-      const res = await api.get('/donations/assigned');
+      const res = await api.get('/donations/assigned?period=month');
       setMyPickups(res.data.donations);
     } catch (err) {
       console.error(err);
