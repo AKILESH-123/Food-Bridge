@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UtensilsCrossed,
@@ -35,20 +35,44 @@ const CreateDonation = () => {
     description: '',
     category: '',
     otherCategoryDetails: '',
+    mealType: 'dinner',
+    preparedAt: '',
+    pickupDeadline: '',
     quantity: '',
-    quantityUnit: 'kg',
+    quantityUnit: 'servings',
     estimatedServings: '',
     expiresAt: '',
     pickupAddress: '',
     pickupCity: '',
     specialInstructions: '',
     allergenInfo: '',
+    storageMethod: 'covered',
+    ingredients: '',
+    safeUseHours: '',
+    latitude: '',
+    longitude: '',
   });
   const [dietType, setDietType] = useState(''); // '' | 'veg' | 'nonveg'
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Fetch donor's current location if permitted
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setForm((p) => ({
+            ...p,
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          }));
+        },
+        () => {}
+      );
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -73,14 +97,17 @@ const CreateDonation = () => {
     if (!form.description.trim()) errs.description = 'Description is required';
     if (!form.category) errs.category = 'Category is required';
     if (form.category === 'other' && !form.otherCategoryDetails.trim()) {
-      errs.otherCategoryDetails = 'Please specify the type of food'
+      errs.otherCategoryDetails = 'Please specify the type of food';
     }
     if (!form.quantity || isNaN(form.quantity) || Number(form.quantity) <= 0) errs.quantity = 'Valid quantity is required';
-    if (!form.expiresAt) errs.expiresAt = 'Expiry time is required';
-    if (new Date(form.expiresAt) <= new Date()) errs.expiresAt = 'Expiry must be in the future';
+    if (!form.expiresAt && !form.pickupDeadline) errs.expiresAt = 'Pickup deadline / safe consumption time is required';
+    if (form.expiresAt && new Date(form.expiresAt) <= new Date()) errs.expiresAt = 'Deadline must be in the future';
     if (!form.pickupAddress.trim()) errs.pickupAddress = 'Pickup address is required';
     if (!form.pickupCity.trim()) errs.pickupCity = 'Pickup city is required';
     if (!dietType) errs.dietType = 'Please select Veg or Non-Veg';
+    if (!form.storageMethod) errs.storageMethod = 'Please select storage method';
+    if (!form.ingredients.trim()) errs.ingredients = 'Ingredients list is required for safety verification';
+    if (!form.preparedAt) errs.preparedAt = 'Cooking / preparation time is required';
     return errs;
   };
 
@@ -100,7 +127,16 @@ const CreateDonation = () => {
           ? `${form.description}\n\nOther category: ${form.otherCategoryDetails.trim()}`
           : form.description;
 
-      Object.entries({ ...form, description: mergedDescription }).forEach(([k, v]) => formData.append(k, v));
+      const submission = {
+        ...form,
+        description: mergedDescription,
+        pickupDeadline: form.pickupDeadline || form.expiresAt,
+        expiresAt: form.expiresAt || form.pickupDeadline,
+      };
+
+      Object.entries(submission).forEach(([k, v]) => {
+        if (v !== '' && v !== null && v !== undefined) formData.append(k, v);
+      });
       // Backend expects these boolean flags
       formData.append('isVegetarian', dietType === 'veg');
       formData.append('isVegan', false);
@@ -110,7 +146,11 @@ const CreateDonation = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      toast.success('Donation posted successfully! NGOs have been notified. 🎉');
+      toast.success(
+        form.mealType === 'dinner'
+          ? '🌙 Urgent dinner donation posted! Nearby verified NGOs alerted.'
+          : 'Donation posted successfully! NGOs have been notified. 🎉'
+      );
       navigate(`/donations/${res.data.donation._id}`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to post donation');
@@ -177,6 +217,42 @@ const CreateDonation = () => {
                   className={`input-field resize-none ${errors.description ? 'border-red-400' : ''}`}
                 />
                 {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+              </div>
+
+              {/* Meal Type Selection */}
+              <div>
+                <label className="label">
+                  Meal Type <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {[
+                    { id: 'dinner', label: '🌙 Dinner', badge: 'High Urgency', color: 'border-purple-300 hover:border-purple-500 bg-purple-50/40' },
+                    { id: 'lunch', label: '☀️ Lunch', badge: 'Afternoon', color: 'border-amber-300 hover:border-amber-500 bg-amber-50/40' },
+                    { id: 'breakfast', label: '🍳 Breakfast', badge: 'Morning', color: 'border-yellow-300 hover:border-yellow-500 bg-yellow-50/40' },
+                    { id: 'snacks', label: '🥪 Snacks', badge: 'Evening', color: 'border-blue-300 hover:border-blue-500 bg-blue-50/40' },
+                    { id: 'other', label: '🍱 Other', badge: 'General', color: 'border-gray-200 hover:border-gray-400 bg-gray-50/40' },
+                  ].map((meal) => (
+                    <button
+                      key={meal.id}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, mealType: meal.id }))}
+                      className={`p-3 rounded-xl border-2 text-center transition-all ${
+                        form.mealType === meal.id
+                          ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold shadow-sm ring-1 ring-emerald-500'
+                          : meal.color
+                      }`}
+                    >
+                      <div className="text-sm font-semibold">{meal.label}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">{meal.badge}</div>
+                    </button>
+                  ))}
+                </div>
+                {form.mealType === 'dinner' && (
+                  <p className="text-xs text-purple-700 bg-purple-50 border border-purple-200 rounded-xl px-3 py-2 mt-2 flex items-center gap-1.5">
+                    <span>🌙</span>
+                    <strong>Dinner Spoilage Alert:</strong> Dinner donations trigger prioritized broadcasts to nearby verified NGOs to ensure prompt rescue before midnight!
+                  </p>
+                )}
               </div>
 
               {/* Category */}
@@ -368,6 +444,79 @@ const CreateDonation = () => {
                     className={`input-field ${errors.expiresAt ? 'border-red-400' : ''}`}
                   />
                   {errors.expiresAt && <p className="text-red-500 text-xs mt-1">{errors.expiresAt}</p>}
+                </div>
+              </div>
+
+              {/* Food Safety & Storage Details */}
+              <div className="pt-3 border-t border-gray-100 space-y-4">
+                <div>
+                  <label className="label">
+                    Storage Method <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      { value: 'refrigerated', label: '❄️ Refrigerated', desc: 'Cold chain maintained' },
+                      { value: 'covered', label: '🍲 Covered', desc: 'Sealed container at room temp' },
+                      { value: 'room_temperature', label: '🌡️ Room Temp', desc: 'Open ambient storage' },
+                    ].map((m) => (
+                      <button
+                        key={m.value}
+                        type="button"
+                        onClick={() => { setForm((p) => ({ ...p, storageMethod: m.value })); if (errors.storageMethod) setErrors((p) => ({ ...p, storageMethod: '' })); }}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          form.storageMethod === m.value
+                            ? 'border-blue-500 bg-blue-50/70 font-semibold text-blue-900 ring-1 ring-blue-400'
+                            : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">{m.label}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{m.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                  {errors.storageMethod && <p className="text-red-500 text-xs mt-1">{errors.storageMethod}</p>}
+                </div>
+
+                <div>
+                  <label className="label">
+                    Ingredients List <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="ingredients"
+                    value={form.ingredients}
+                    onChange={handleChange}
+                    placeholder="e.g. Basmati rice, chicken, spices, sunflower oil, yogurt"
+                    className={`input-field ${errors.ingredients ? 'border-red-400' : ''}`}
+                  />
+                  {errors.ingredients && <p className="text-red-500 text-xs mt-1">{errors.ingredients}</p>}
+                </div>
+              </div>
+
+              {/* Dinner / Spoilage Prevention Timers */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                <div>
+                  <label className="label">
+                    Cooking Time (Prepared At) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    name="preparedAt"
+                    value={form.preparedAt}
+                    onChange={handleChange}
+                    className={`input-field ${errors.preparedAt ? 'border-red-400' : ''}`}
+                  />
+                  {errors.preparedAt && <p className="text-red-500 text-xs mt-1">{errors.preparedAt}</p>}
+                </div>
+                <div>
+                  <label className="label">Expected Safe-Use Time / Pickup Deadline</label>
+                  <input
+                    type="datetime-local"
+                    name="pickupDeadline"
+                    value={form.pickupDeadline}
+                    onChange={handleChange}
+                    min={minDateTime}
+                    className="input-field"
+                  />
                 </div>
               </div>
             </div>

@@ -53,13 +53,40 @@ const emitToRole = async (role, event, data) => {
   if (!io) return;
   try {
     const User = require('../models/User');
-    const users = await User.find({ role, isActive: true }, '_id');
+    const users = await User.findAll({ where: { role, isActive: true }, attributes: ['id'] });
     users.forEach((user) => {
-      io.to(user._id.toString()).emit(event, data);
+      io.to(user.id.toString()).emit(event, data);
     });
   } catch (err) {
     console.error('emitToRole error:', err.message);
   }
 };
 
-module.exports = { initSocket, getIO, emitToUser, emitToAll, emitToRole };
+const emitToVerifiedNGOs = async (event, data, donorCoords = null) => {
+  if (!io) return;
+  try {
+    const User = require('../models/User');
+    const { calculateDistance } = require('./distance');
+
+    const ngos = await User.findAll({
+      where: {
+        role: 'ngo',
+        isActive: true,
+        verificationStatus: 'verified',
+      },
+      attributes: ['id', 'latitude', 'longitude', 'serviceRadius', 'organizationName'],
+    });
+
+    ngos.forEach((ngo) => {
+      let distanceKm = null;
+      if (donorCoords && donorCoords.lat && donorCoords.lng && ngo.latitude && ngo.longitude) {
+        distanceKm = calculateDistance(donorCoords.lat, donorCoords.lng, ngo.latitude, ngo.longitude);
+      }
+      io.to(ngo.id.toString()).emit(event, { ...data, distanceKm });
+    });
+  } catch (err) {
+    console.error('emitToVerifiedNGOs error:', err.message);
+  }
+};
+
+module.exports = { initSocket, getIO, emitToUser, emitToAll, emitToRole, emitToVerifiedNGOs };

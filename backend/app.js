@@ -31,6 +31,7 @@ app.use('/api/donations', require('./routes/donations'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/requests', require('./routes/requests'));
 
 if (shouldServeFrontend) {
   app.use(express.static(frontendBuildPath));

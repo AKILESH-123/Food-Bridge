@@ -1,4 +1,4 @@
-﻿const { Op, fn, col, literal } = require('sequelize');
+const { Op, fn, col, literal } = require('sequelize');
 const { sequelize } = require('../config/db');
 const { User, Donation } = require('../models/index');
 
@@ -160,61 +160,87 @@ exports.getNGOStats = async (req, res) => {
 // @route   GET /api/stats/admin
 exports.getAdminStats = async (req, res) => {
   try {
-    const [totalDonations, completedDonations, usersByRole, byCategory, byCity, monthly, recentUsers, recentDonations] =
-      await Promise.all([
-        Donation.count(),
-        Donation.count({ where: { status: 'completed' } }),
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
-        // Users grouped by role
-        User.findAll({
-          attributes: ['role', [fn('COUNT', col('id')), 'count']],
-          group: ['role'],
-          raw: true,
-        }),
+    const [
+      totalDonations, completedDonations, usersByRole, byCategory, byCity, monthly,
+      recentUsers, recentDonations,
+      pendingNGOs, verifiedNGOs, rejectedNGOs,
+      dinnerDonationsToday, dinnerMealsRescued, expiredDonations
+    ] = await Promise.all([
+      Donation.count(),
+      Donation.count({ where: { status: 'completed' } }),
 
-        // Donations grouped by category
-        Donation.findAll({
-          attributes: ['category', [fn('COUNT', col('id')), 'count']],
-          group: ['category'],
-          order: [[literal('count'), 'DESC']],
-          raw: true,
-        }),
+      // Users grouped by role
+      User.findAll({
+        attributes: ['role', [fn('COUNT', col('id')), 'count']],
+        group: ['role'],
+        raw: true,
+      }),
 
-        // Donations grouped by city (top 10)
-        Donation.findAll({
-          attributes: ['pickupCity', [fn('COUNT', col('id')), 'count']],
-          group: ['pickupCity'],
-          order: [[literal('count'), 'DESC']],
-          limit: 10,
-          raw: true,
-        }),
+      // Donations grouped by category
+      Donation.findAll({
+        attributes: ['category', [fn('COUNT', col('id')), 'count']],
+        group: ['category'],
+        order: [[literal('count'), 'DESC']],
+        raw: true,
+      }),
 
-        // Monthly donations (last 12 months)
-        sequelize.query(
-          `SELECT 
-            YEAR(createdAt) AS year,
-            MONTH(createdAt) AS month,
-            COUNT(*) AS count,
-            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed
-          FROM donations
-          GROUP BY YEAR(createdAt), MONTH(createdAt)
-          ORDER BY year DESC, month DESC
-          LIMIT 12`,
-          { type: sequelize.QueryTypes.SELECT }
-        ),
+      // Donations grouped by city (top 10)
+      Donation.findAll({
+        attributes: ['pickupCity', [fn('COUNT', col('id')), 'count']],
+        group: ['pickupCity'],
+        order: [[literal('count'), 'DESC']],
+        limit: 10,
+        raw: true,
+      }),
 
-        User.findAll({
-          attributes: ['id', 'name', 'email', 'role', 'city', 'isVerified', 'isActive', 'impactPoints', 'createdAt'],
-          order: [['createdAt', 'DESC']],
-          limit: 5,
-        }),
+      // Monthly donations (last 12 months)
+      sequelize.query(
+        `SELECT 
+          YEAR(createdAt) AS year,
+          MONTH(createdAt) AS month,
+          COUNT(*) AS count,
+          SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed
+        FROM donations
+        GROUP BY YEAR(createdAt), MONTH(createdAt)
+        ORDER BY year DESC, month DESC
+        LIMIT 12`,
+        { type: sequelize.QueryTypes.SELECT }
+      ),
 
-        Donation.findAll({
-          include: [{ model: User, as: 'donor', attributes: ['id', 'name', 'organizationName'] }],
-          order: [['createdAt', 'DESC']],
-          limit: 5,
-        }),
-      ]);
+      User.findAll({
+        attributes: ['id', 'name', 'email', 'role', 'city', 'isVerified', 'verificationStatus', 'isActive', 'impactPoints', 'createdAt'],
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+      }),
+
+      Donation.findAll({
+        include: [{ model: User, as: 'donor', attributes: ['id', 'name', 'organizationName'] }],
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+      }),
+
+      // NGO Verification counts
+      User.count({ where: { role: 'ngo', verificationStatus: 'pending' } }),
+      User.count({ where: { role: 'ngo', verificationStatus: 'verified' } }),
+      User.count({ where: { role: 'ngo', verificationStatus: 'rejected' } }),
+
+      // Dinner Rescue metrics
+      Donation.count({
+        where: {
+          mealType: 'dinner',
+          createdAt: { [Op.gte]: todayStart },
+        },
+      }),
+      Donation.findOne({
+        where: { mealType: 'dinner', status: 'completed' },
+        attributes: [[fn('SUM', col('mealsDistributed')), 'totalDinnerMeals']],
+        raw: true,
+      }),
+      Donation.count({ where: { freshnessStatus: 'expired' } }),
+    ]);
 
     const formattedUsersByRole = usersByRole.map((r) => ({ _id: r.role, count: Number(r.count) }));
     const formattedByCategory = byCategory.map((r) => ({ _id: r.category, count: Number(r.count) }));
@@ -243,6 +269,12 @@ exports.getAdminStats = async (req, res) => {
         monthly: formattedMonthly,
         recentUsers: serializedUsers,
         recentDonations: serializedDonations,
+        pendingNGOs,
+        verifiedNGOs,
+        rejectedNGOs,
+        dinnerDonationsToday,
+        dinnerMealsRescued: Number(dinnerMealsRescued?.totalDinnerMeals) || 0,
+        expiredDonations,
       },
     });
   } catch (error) {

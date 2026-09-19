@@ -24,7 +24,9 @@ export const SocketProvider = ({ children }) => {
     }
 
     const newSocket = io(process.env.REACT_APP_SOCKET_URL || socketBaseUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
     });
 
     newSocket.on('connect', () => {

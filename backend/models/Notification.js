@@ -16,16 +16,7 @@ const Notification = sequelize.define(
       references: { model: 'users', key: 'id' },
     },
     type: {
-      type: DataTypes.ENUM(
-        'new_donation',
-        'donation_requested',
-        'donation_assigned',
-        'donation_completed',
-        'donation_expired',
-        'donation_cancelled',
-        'system',
-        'welcome'
-      ),
+      type: DataTypes.STRING(100),
       allowNull: false,
     },
     title: { type: DataTypes.STRING(255), allowNull: false },

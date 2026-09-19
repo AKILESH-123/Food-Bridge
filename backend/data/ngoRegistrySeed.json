@@ -1,0 +1,51 @@
+[
+  {
+    "registrationNumber": "TN12345",
+    "ngoName": "ABC Foundation",
+    "registrationType": "Trust",
+    "state": "Tamil Nadu",
+    "status": "Active"
+  },
+  {
+    "registrationNumber": "TN67890",
+    "ngoName": "Helping Hands",
+    "registrationType": "Society",
+    "state": "Tamil Nadu",
+    "status": "Active"
+  },
+  {
+    "registrationNumber": "TN54321",
+    "ngoName": "Chennai Food Care Foundation",
+    "registrationType": "Section 8 Company",
+    "state": "Tamil Nadu",
+    "status": "Active"
+  },
+  {
+    "registrationNumber": "TN11223",
+    "ngoName": "Madurai Annam Trust",
+    "registrationType": "Trust",
+    "state": "Tamil Nadu",
+    "status": "Active"
+  },
+  {
+    "registrationNumber": "KA45678",
+    "ngoName": "Bangalore Seva Trust",
+    "registrationType": "Trust",
+    "state": "Karnataka",
+    "status": "Active"
+  },
+  {
+    "registrationNumber": "MH78901",
+    "ngoName": "Mumbai Food Relief",
+    "registrationType": "Society",
+    "state": "Maharashtra",
+    "status": "Active"
+  },
+  {
+    "registrationNumber": "TN99999",
+    "ngoName": "Inactive Charity Trust",
+    "registrationType": "Trust",
+    "state": "Tamil Nadu",
+    "status": "Inactive"
+  }
+]

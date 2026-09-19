@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Users,
-  Package,
   CheckCircle2,
-  TrendingUp,
   Shield,
   AlertCircle,
   BarChart3,
   UserCheck,
+  Moon,
+  FileText,
+  XCircle,
+  ExternalLink,
 } from 'lucide-react';
 import {
   BarChart,
@@ -24,7 +26,7 @@ import {
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import StatsCard from '../components/StatsCard';
-import api from '../services/api';
+import api, { buildBackendUrl } from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -41,28 +43,51 @@ const CATEGORY_COLORS = {
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
+  const [verificationQueue, setVerificationQueue] = useState([]);
+  const [verificationFilter, setVerificationFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedNGO, setSelectedNGO] = useState(null);
+  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, usersRes] = await Promise.all([
+      const [statsRes, usersRes, queueRes] = await Promise.all([
         api.get('/stats/admin'),
         api.get('/users?limit=20'),
+        api.get(`/users/ngos/verification-queue?status=${verificationFilter}`),
       ]);
       setStats(statsRes.data.stats);
       setUsers(usersRes.data.users);
+      setVerificationQueue(queueRes.data.ngos || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [verificationFilter]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleVerifyNGO = async (ngoId, action, reason = '') => {
+    setActionLoading(true);
+    try {
+      await api.put(`/users/${ngoId}/verify-ngo`, { action, rejectionReason: reason });
+      toast.success(`NGO ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'updated'} successfully!`);
+      setRejectionModalOpen(false);
+      setRejectionReason('');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update NGO verification');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleToggleUser = async (userId, isActive) => {
     if (!window.confirm(`${isActive ? 'Deactivate' : 'Activate'} this user?`)) return;
@@ -122,9 +147,20 @@ const AdminDashboard = () => {
 
         <main className="flex-1 p-6 lg:p-8 max-w-6xl mx-auto w-full">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-gray-800">Admin Dashboard 🛡️</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Platform overview and management</p>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-black text-gray-800">Admin Control Center 🛡️</h1>
+              <p className="text-gray-500 text-sm mt-0.5">Platform management, NGO verification, & spoilage tracking</p>
+            </div>
+            {stats?.pendingNGOs > 0 && (
+              <button
+                onClick={() => setActiveTab('ngo_verification')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md transition-all animate-pulse"
+              >
+                <AlertCircle className="w-4 h-4" />
+                {stats.pendingNGOs} NGO{stats.pendingNGOs > 1 ? 's' : ''} Awaiting Verification
+              </button>
+            )}
           </div>
 
           {loading ? (
@@ -134,34 +170,35 @@ const AdminDashboard = () => {
           ) : (
             <>
               {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                 <StatsCard title="Total Users" value={totalUsers} icon={Users} color="blue" />
-                <StatsCard title="Total Donations" value={stats?.totalDonations || 0} icon={Package} color="green" />
-                <StatsCard title="Completed" value={stats?.completedDonations || 0} icon={CheckCircle2} color="purple" />
+                <StatsCard title="Pending NGOs" value={stats?.pendingNGOs || 0} icon={UserCheck} color="orange" />
+                <StatsCard title="Verified NGOs" value={stats?.verifiedNGOs || 0} icon={Shield} color="green" />
+                <StatsCard title="Dinner Rescued" value={stats?.dinnerMealsRescued || 0} icon={Moon} color="purple" suffix=" meals" />
                 <StatsCard
-                  title="Success Rate"
-                  value={
-                    stats?.totalDonations
-                      ? Math.round((stats.completedDonations / stats.totalDonations) * 100)
-                      : 0
-                  }
-                  icon={TrendingUp}
-                  color="orange"
-                  suffix="%"
+                  title="Completed"
+                  value={stats?.completedDonations || 0}
+                  icon={CheckCircle2}
+                  color="green"
                 />
               </div>
 
               {/* Tabs */}
               <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-                {['overview', 'users', 'donations'].map((tab) => (
+                {[
+                  { id: 'overview', label: 'Overview' },
+                  { id: 'ngo_verification', label: `NGO Verification (${stats?.pendingNGOs || 0})` },
+                  { id: 'users', label: 'Users' },
+                  { id: 'donations', label: 'Donations' },
+                ].map((tab) => (
                   <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold capitalize whitespace-nowrap transition-all ${
-                      activeTab === tab ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                      activeTab === tab.id ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                     }`}
                   >
-                    {tab}
+                    {tab.label}
                   </button>
                 ))}
               </div>
@@ -263,6 +300,209 @@ const AdminDashboard = () => {
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* NGO Verification Management Tab */}
+              {activeTab === 'ngo_verification' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div>
+                      <h3 className="font-bold text-gray-800 text-lg">NGO Trust & Verification Queue</h3>
+                      <p className="text-gray-500 text-xs mt-1">Review legal documents, registration numbers, and approve verified status.</p>
+                    </div>
+
+                    {/* Filter Pills */}
+                    <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl">
+                      {['pending', 'verified', 'rejected', 'all'].map((statusKey) => (
+                        <button
+                          key={statusKey}
+                          onClick={() => setVerificationFilter(statusKey)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
+                            verificationFilter === statusKey
+                              ? 'bg-white text-gray-800 shadow-sm'
+                              : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          {statusKey}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {verificationQueue.length === 0 ? (
+                    <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
+                      <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-700 font-semibold">No NGOs found in {verificationFilter} queue</p>
+                      <p className="text-gray-400 text-xs mt-1">All organizations have been reviewed or filter has 0 entries.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {verificationQueue.map((ngo) => (
+                        <div key={ngo.id} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-bold text-gray-800 text-base">{ngo.organizationName || ngo.name}</h4>
+                                <span
+                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                    ngo.verificationStatus === 'verified'
+                                      ? 'bg-emerald-100 text-emerald-700'
+                                      : ngo.verificationStatus === 'rejected'
+                                      ? 'bg-red-100 text-red-700'
+                                      : 'bg-amber-100 text-amber-700'
+                                  }`}
+                                >
+                                  {ngo.verificationStatus === 'verified' && '🟢 Verified NGO'}
+                                  {ngo.verificationStatus === 'pending' && '🟡 Pending Verification'}
+                                  {ngo.verificationStatus === 'rejected' && '🔴 Rejected'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">Contact: <span className="font-medium text-gray-700">{ngo.contactPerson || ngo.name}</span> · {ngo.phone || 'No phone'}</p>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm">
+                              {ngo.organizationName?.charAt(0) || ngo.name?.charAt(0)}
+                            </div>
+                          </div>
+
+                          <div className="bg-gray-50 rounded-xl p-3.5 space-y-2 text-xs text-gray-600 mb-4">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Reg Number:</span>
+                              <span className="font-mono font-medium text-gray-800">{ngo.registrationNumber || 'Not provided'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Email:</span>
+                              <span className="text-gray-800">{ngo.email}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Location / Service Area:</span>
+                              <span className="text-gray-800">{ngo.city}, {ngo.state} ({ngo.serviceArea || 'All city'}, {ngo.serviceRadius || 15}km)</span>
+                            </div>
+                            {ngo.description && (
+                              <div className="pt-2 border-t border-gray-200">
+                                <span className="text-gray-400 block mb-1">Focus / Mission:</span>
+                                <p className="text-gray-700 italic">{ngo.description}</p>
+                              </div>
+                            )}
+                            {ngo.rejectionReason && (
+                              <div className="pt-2 border-t border-red-200 text-red-600">
+                                <span className="font-semibold block">Rejection Note:</span>
+                                {ngo.rejectionReason}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Documents Preview */}
+                          <div className="flex items-center gap-3 mb-5">
+                            {ngo.organizationDocument ? (
+                              <a
+                                href={buildBackendUrl(ngo.organizationDocument)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold transition-colors"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                View Registration Proof
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : (
+                              <span className="text-xs text-gray-400 italic">No document uploaded</span>
+                            )}
+
+                            {ngo.idProof && (
+                              <a
+                                href={buildBackendUrl(ngo.idProof)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                ID Proof
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                            {ngo.verificationStatus !== 'verified' && (
+                              <button
+                                onClick={() => handleVerifyNGO(ngo.id, 'approve')}
+                                disabled={actionLoading}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                                Approve NGO
+                              </button>
+                            )}
+
+                            {ngo.verificationStatus !== 'rejected' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedNGO(ngo);
+                                  setRejectionModalOpen(true);
+                                }}
+                                disabled={actionLoading}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl transition-all"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Reject
+                              </button>
+                            )}
+
+                            {ngo.verificationStatus === 'rejected' && (
+                              <button
+                                onClick={() => handleVerifyNGO(ngo.id, 'reverify')}
+                                disabled={actionLoading}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-xs rounded-xl transition-all"
+                              >
+                                Re-verify
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Rejection Modal */}
+                  {rejectionModalOpen && selectedNGO && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-bold text-gray-800 text-base">Reject NGO Verification</h4>
+                          <button onClick={() => setRejectionModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                            ✕
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Please specify why <span className="font-bold text-gray-700">{selectedNGO.organizationName || selectedNGO.name}</span> is rejected. This will be visible to the NGO.
+                        </p>
+                        <textarea
+                          rows="3"
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          placeholder="e.g. Illegible registration document, invalid 80G certificate, or mismatched contact information..."
+                          className="input-field text-xs resize-none"
+                        />
+                        <div className="flex justify-end gap-2 pt-2">
+                          <button
+                            onClick={() => setRejectionModalOpen(false)}
+                            className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleVerifyNGO(selectedNGO.id, 'reject', rejectionReason)}
+                            disabled={actionLoading || !rejectionReason.trim()}
+                            className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl disabled:opacity-50"
+                          >
+                            Confirm Rejection
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

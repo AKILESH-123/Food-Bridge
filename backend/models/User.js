@@ -30,6 +30,23 @@ const User = sequelize.define(
       type: DataTypes.ENUM('donor', 'ngo', 'admin'),
       defaultValue: 'donor',
     },
+    verificationStatus: {
+      type: DataTypes.ENUM('pending', 'verified', 'rejected'),
+      defaultValue: 'verified', // Will be set to 'pending' for newly registered NGOs
+    },
+    registrationNumber: { type: DataTypes.STRING(100), allowNull: true },
+    registrationType: { type: DataTypes.STRING(100), allowNull: true },
+    contactPerson: { type: DataTypes.STRING(100), allowNull: true },
+    pincode: { type: DataTypes.STRING(10), allowNull: true },
+    serviceArea: { type: DataTypes.STRING(150), allowNull: true },
+    serviceRadius: { type: DataTypes.FLOAT, defaultValue: 15.0 }, // km
+    organizationDocument: { type: DataTypes.STRING(255), allowNull: true },
+    idProof: { type: DataTypes.STRING(255), allowNull: true },
+    verifiedBy: { type: DataTypes.INTEGER, allowNull: true },
+    verifiedAt: { type: DataTypes.DATE, allowNull: true },
+    rejectionReason: { type: DataTypes.TEXT, allowNull: true },
+    latitude: { type: DataTypes.FLOAT, allowNull: true },
+    longitude: { type: DataTypes.FLOAT, allowNull: true },
     phone: { type: DataTypes.STRING(20), allowNull: true },
     organizationName: { type: DataTypes.STRING(150), allowNull: true },
     address: { type: DataTypes.TEXT, allowNull: true },

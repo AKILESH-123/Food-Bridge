@@ -64,6 +64,17 @@ const Register = () => {
     address: '',
     city: '',
     state: '',
+    pincode: '',
+    registrationNumber: '',
+    registrationType: 'Trust',
+    contactPerson: '',
+    serviceArea: '',
+    serviceRadius: '15',
+    description: '',
+  });
+  const [documents, setDocuments] = useState({
+    organizationDocument: null,
+    idProof: null,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -77,6 +88,13 @@ const Register = () => {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setDocuments((prev) => ({ ...prev, [name]: files[0] }));
+    }
+  };
+
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = 'Name is required';
@@ -85,6 +103,15 @@ const Register = () => {
     if (form.password.length < 6) errs.password = 'Password must be at least 6 characters';
     if (form.password !== form.confirmPassword) errs.confirmPassword = 'Passwords do not match';
     if (!form.city.trim()) errs.city = 'City is required';
+
+    if (form.role === 'ngo') {
+      if (!form.organizationName.trim()) errs.organizationName = 'NGO / Organization Name is required';
+      if (!form.registrationNumber.trim()) errs.registrationNumber = 'NGO Registration Number is required';
+      if (!form.registrationType) errs.registrationType = 'Registration Type is required';
+      if (!form.state || !form.state.trim()) errs.state = 'State is required for NGO verification';
+      if (!form.contactPerson.trim()) errs.contactPerson = 'Primary Contact Person is required';
+    }
+
     return errs;
   };
 
@@ -98,18 +125,34 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      const { confirmPassword, ...submitData } = form;
+      let submitData;
+      if (form.role === 'ngo' && (documents.organizationDocument || documents.idProof)) {
+        submitData = new FormData();
+        Object.entries(form).forEach(([key, val]) => {
+          if (key !== 'confirmPassword') submitData.append(key, val);
+        });
+        if (documents.organizationDocument) submitData.append('organizationDocument', documents.organizationDocument);
+        if (documents.idProof) submitData.append('idProof', documents.idProof);
+      } else {
+        const { confirmPassword, ...rest } = form;
+        submitData = rest;
+      }
+
       const user = await register(submitData);
       const path =
         user.role === 'donor' ? '/dashboard/donor' : user.role === 'ngo' ? '/dashboard/ngo' : '/dashboard/admin';
       navigate(path, { replace: true });
     } catch (err) {
       const errs = err.response?.data?.errors;
+      let msg = 'Registration failed. Please try again.';
       if (errs && Array.isArray(errs)) {
-        setError(errs.map((e) => e.msg).join(', '));
-      } else {
-        setError(err.response?.data?.message || 'Registration failed. Please try again.');
+        msg = errs.map((e) => e.msg).join(', ');
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
       }
+      setError(msg);
+      import('react-hot-toast').then(({ default: toast }) => toast.error(msg));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -233,6 +276,176 @@ const Register = () => {
               <InputField name="state" label="State" placeholder="Tamil Nadu" icon={MapPin} form={form} onChange={handleChange} fieldErrors={fieldErrors} loading={loading} />
             </div>
 
+            {/* NGO Specific Verification Fields */}
+            {form.role === 'ngo' && (
+              <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  NGO Trust & Verification Details
+                </div>
+                <p className="text-xs text-emerald-700">
+                  To ensure food safety and integrity, all NGOs must be verified by FoodBridge admins before claiming food.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <InputField
+                    name="registrationNumber"
+                    label="NGO Registration Number"
+                    placeholder="e.g. TN12345"
+                    required
+                    form={form}
+                    onChange={handleChange}
+                    fieldErrors={fieldErrors}
+                    loading={loading}
+                  />
+
+                  <div>
+                    <label className="label">
+                      Registration Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="registrationType"
+                      value={form.registrationType}
+                      onChange={handleChange}
+                      disabled={loading}
+                      className="input-field text-xs font-semibold bg-white"
+                    >
+                      <option value="Trust">Trust</option>
+                      <option value="Society">Society</option>
+                      <option value="Section 8 Company">Section 8 Company</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    {fieldErrors.registrationType && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors.registrationType}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white/80 p-3 rounded-xl border border-emerald-100 text-xs text-gray-600 space-y-1">
+                  <span className="font-bold text-emerald-800 flex items-center gap-1">
+                    💡 Quick Demo Autofill (Sample Mock Registry):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {[
+                      { reg: 'TN12345', name: 'ABC Foundation', type: 'Trust', state: 'Tamil Nadu' },
+                      { reg: 'TN67890', name: 'Helping Hands', type: 'Society', state: 'Tamil Nadu' },
+                      { reg: 'TN54321', name: 'Chennai Food Care Foundation', type: 'Section 8 Company', state: 'Tamil Nadu' },
+                      { reg: 'TN99999', name: 'Inactive Charity Trust', type: 'Trust', state: 'Tamil Nadu' },
+                    ].map((demo) => (
+                      <button
+                        key={demo.reg}
+                        type="button"
+                        onClick={() => {
+                          setForm((prev) => ({
+                            ...prev,
+                            organizationName: demo.name,
+                            registrationNumber: demo.reg,
+                            registrationType: demo.type,
+                            state: demo.state,
+                            city: demo.reg === 'TN54321' ? 'Chennai' : 'Madurai',
+                            contactPerson: 'Director In-Charge',
+                          }));
+                        }}
+                        className="px-2.5 py-1 bg-emerald-100/70 hover:bg-emerald-200 text-emerald-900 rounded-lg font-medium transition-all"
+                      >
+                        {demo.reg} ({demo.name.split(' ')[0]})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <InputField
+                    name="contactPerson"
+                    label="Authorized Contact Person"
+                    placeholder="e.g. Sarah Jenkins (Director)"
+                    required
+                    form={form}
+                    onChange={handleChange}
+                    fieldErrors={fieldErrors}
+                    loading={loading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <InputField
+                    name="pincode"
+                    label="Pincode"
+                    placeholder="600001"
+                    form={form}
+                    onChange={handleChange}
+                    fieldErrors={fieldErrors}
+                    loading={loading}
+                  />
+                  <InputField
+                    name="serviceArea"
+                    label="Service Area"
+                    placeholder="e.g. Central Chennai"
+                    form={form}
+                    onChange={handleChange}
+                    fieldErrors={fieldErrors}
+                    loading={loading}
+                  />
+                  <div>
+                    <label className="label">Service Radius (km)</label>
+                    <input
+                      type="number"
+                      name="serviceRadius"
+                      min="1"
+                      max="100"
+                      value={form.serviceRadius}
+                      onChange={handleChange}
+                      disabled={loading}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">NGO Description & Focus</label>
+                  <textarea
+                    name="description"
+                    rows="2"
+                    value={form.description}
+                    onChange={handleChange}
+                    placeholder="Briefly describe your NGO's mission, orphanages, shelters, or hunger relief programs..."
+                    disabled={loading}
+                    className="input-field resize-none text-sm"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="label">
+                      NGO Reg Proof / 80G / 12A (PDF or Image) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      name="organizationDocument"
+                      onChange={handleFileChange}
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      disabled={loading}
+                      className="text-xs text-gray-600 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+                    />
+                    {fieldErrors.organizationDocument && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors.organizationDocument}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="label">Authorized Person ID Proof (Optional)</label>
+                    <input
+                      type="file"
+                      name="idProof"
+                      onChange={handleFileChange}
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      disabled={loading}
+                      className="text-xs text-gray-600 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-800 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Password */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -317,7 +530,7 @@ const Register = () => {
               useOneTap={false}
               theme="outline"
               size="large"
-              width="100%"
+              width="360"
               text="signup_with"
               shape="pill"
             />

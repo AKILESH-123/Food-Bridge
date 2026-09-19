@@ -47,7 +47,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (data) => {
-    const res = await api.post('/auth/register', data);
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.post('/auth/register', data, config);
     const { token, user: userData } = res.data;
     localStorage.setItem('foodbridge_token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;

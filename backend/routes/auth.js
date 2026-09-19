@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getMe, googleAuth } = require('../controllers/authController');
+const { register, login, getMe, googleAuth, verifyNgoPrecheck } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { body } = require('express-validator');
 
+const upload = require('../middleware/upload');
+
 router.post('/google', googleAuth);
+router.post('/verify-ngo', verifyNgoPrecheck);
 
 router.post(
   '/register',
+  upload.fields([
+    { name: 'organizationDocument', maxCount: 1 },
+    { name: 'idProof', maxCount: 1 },
+    { name: 'profileImage', maxCount: 1 },
+  ]),
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please enter a valid email'),

@@ -3,21 +3,53 @@ import { Search, Filter, UtensilsCrossed, Flame, X, ChevronLeft, ChevronRight } 
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import DonationCard from '../components/DonationCard';
+import FoodSafetyModal from '../components/FoodSafetyModal';
+import { calculateFoodSafetyStatus } from '../utils/foodSafety';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
 const CATEGORIES = ['all', 'cooked', 'packaged', 'raw', 'beverages', 'bakery', 'dairy', 'other'];
+const MEAL_TYPES = [
+  { id: 'all', label: 'All Meals' },
+  { id: 'dinner', label: '🌙 Dinner Spoilage Rescue' },
+  { id: 'lunch', label: '☀️ Lunch' },
+  { id: 'breakfast', label: '🍳 Breakfast' },
+  { id: 'snacks', label: '🥪 Snacks' },
+];
 
 const Donations = () => {
   const { user } = useAuth();
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ city: '', category: '', urgent: false });
+  const [filters, setFilters] = useState({ city: '', category: '', urgent: false, mealType: 'all', sortBy: 'nearest' });
   const [search, setSearch] = useState('');
+  const [userLocation, setUserLocation] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [showFilters, setShowFilters] = useState(false);
+
+  // Food safety modal state
+  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [safetyModalOpen, setSafetyModalOpen] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [safetyFilter, setSafetyFilter] = useState('all'); // 'all' | 'safe' | 'urgent' | 'do_not_distribute'
+  const [, setTick] = useState(Date.now());
+
+  // 60-second timer to re-evaluate food safety statuses
+  useEffect(() => {
+    const timer = setInterval(() => setTick(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => {}
+      );
+    }
+  }, []);
 
   const fetchDonations = useCallback(async (page = 1) => {
     setLoading(true);
@@ -25,7 +57,13 @@ const Donations = () => {
       const params = new URLSearchParams({ page, limit: 12 });
       if (filters.city) params.append('city', filters.city);
       if (filters.category && filters.category !== 'all') params.append('category', filters.category);
+      if (filters.mealType && filters.mealType !== 'all') params.append('mealType', filters.mealType);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.urgent) params.append('urgent', 'true');
+      if (userLocation) {
+        params.append('lat', userLocation.lat);
+        params.append('lng', userLocation.lng);
+      }
 
       const res = await api.get(`/donations?${params}`);
       setDonations(res.data.donations);
@@ -35,16 +73,20 @@ const Donations = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, userLocation]);
 
   useEffect(() => {
     fetchDonations(1);
   }, [fetchDonations]);
 
   const handleRequest = async (donation) => {
+    if (user?.role === 'ngo' && user?.verificationStatus !== 'verified') {
+      toast.error('Admin verification required! Only verified NGOs can claim donations.', { duration: 4000 });
+      return;
+    }
     try {
       await api.post(`/donations/${donation._id}/request`);
-      toast.success('Pickup requested! Wait for donor confirmation. 📦');
+      toast.success('Food reserved & claimed! Awaiting donor pickup assurance. 📦');
       fetchDonations(pagination.page);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Request failed');
@@ -133,9 +175,30 @@ const Donations = () => {
           </div>
 
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Category:</span>
+            <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+              {/* Meal Type Filter */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-gray-700 w-20">Meal Type:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {MEAL_TYPES.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setFilters((p) => ({ ...p, mealType: m.id }))}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        filters.mealType === m.id
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-gray-700 w-20">Category:</span>
                 <div className="flex flex-wrap gap-1.5">
                   {CATEGORIES.map((cat) => (
                     <button
@@ -152,19 +215,61 @@ const Donations = () => {
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-2 ml-auto">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <div
-                    onClick={() => setFilters((p) => ({ ...p, urgent: !p.urgent }))}
-                    className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${filters.urgent ? 'bg-red-500' : 'bg-gray-200'}`}
+
+              {/* Food Safety Status Filter */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-gray-700 w-20">Safety:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { key: 'all', label: 'All Statuses' },
+                    { key: 'safe', label: '🟢 Safe to Review' },
+                    { key: 'urgent', label: '🟡 Urgent Pickup' },
+                    { key: 'do_not_distribute', label: '🔴 Exceeded Limit' },
+                  ].map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={() => setSafetyFilter(s.key)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        safetyFilter === s.key
+                          ? 'bg-emerald-700 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sort & Urgency */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-700">Sort By:</span>
+                  <select
+                    value={filters.sortBy}
+                    onChange={(e) => setFilters((p) => ({ ...p, sortBy: e.target.value }))}
+                    className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium text-gray-700"
                   >
-                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${filters.urgent ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
-                    <Flame className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    <span>Urgent Only</span>
-                  </span>
-                </label>
+                    <option value="nearest">📍 Nearest First</option>
+                    <option value="expiring_soon">⏰ Expiring Soonest</option>
+                    <option value="newest">🆕 Newest Posted</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div
+                      onClick={() => setFilters((p) => ({ ...p, urgent: !p.urgent }))}
+                      className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${filters.urgent ? 'bg-red-500' : 'bg-gray-200'}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${filters.urgent ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </div>
+                    <span className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
+                      <Flame className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                      <span>Urgent Only</span>
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
           )}
@@ -189,14 +294,33 @@ const Donations = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredBySearch.map((donation) => (
-                <DonationCard
-                  key={donation._id}
-                  donation={donation}
-                  onAction={user?.role === 'ngo' && donation.status === 'available' ? handleRequest : undefined}
-                  actionLabel="Request Pickup"
-                />
-              ))}
+              {filteredBySearch
+                .map((d) => ({
+                  ...d,
+                  computedSafety: calculateFoodSafetyStatus(d),
+                }))
+                .filter((d) => safetyFilter === 'all' || d.computedSafety.statusKey === safetyFilter)
+                .sort((a, b) => {
+                  const score = { safe: 0, urgent: 1, do_not_distribute: 2 };
+                  const diff = (score[a.computedSafety.statusKey] ?? 1) - (score[b.computedSafety.statusKey] ?? 1);
+                  if (diff !== 0) return diff;
+                  return a.computedSafety.remainingMs - b.computedSafety.remainingMs;
+                })
+                .map((donation) => (
+                  <DonationCard
+                    key={donation._id}
+                    donation={donation}
+                    onCardClick={user?.role === 'ngo' ? (d) => {
+                      setSelectedDonation(d);
+                      setSafetyModalOpen(true);
+                    } : undefined}
+                    onAction={user?.role === 'ngo' && donation.status === 'available' ? (d) => {
+                      setSelectedDonation(d);
+                      setSafetyModalOpen(true);
+                    } : undefined}
+                    actionLabel="Review & Accept"
+                  />
+                ))}
             </div>
 
             {/* Pagination */}
@@ -225,6 +349,28 @@ const Donations = () => {
         )}
         </div>
       </div>
+
+      {/* Food Safety Modal */}
+      <FoodSafetyModal
+        isOpen={safetyModalOpen}
+        onClose={() => {
+          setSafetyModalOpen(false);
+          setSelectedDonation(null);
+        }}
+        donation={selectedDonation}
+        safetyStatus={selectedDonation ? calculateFoodSafetyStatus(selectedDonation) : null}
+        onAccept={async (donation) => {
+          setIsAccepting(true);
+          try {
+            await handleRequest(donation);
+            setSafetyModalOpen(false);
+            setSelectedDonation(null);
+          } finally {
+            setIsAccepting(false);
+          }
+        }}
+        isAccepting={isAccepting}
+      />
     </div>
   );
 };

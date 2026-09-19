@@ -8,6 +8,7 @@ import {
   Star,
   Leaf,
   ChevronRight,
+  Heart,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
@@ -30,18 +31,33 @@ const DonorDashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [donations, setDonations] = useState([]);
+  const [communityRequests, setCommunityRequests] = useState([]);
+  const [myInterests, setMyInterests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [interestModal, setInterestModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [pledgeForm, setPledgeForm] = useState({
+    supportType: 'food',
+    pledgedQuantity: '25',
+    pledgedAmount: '',
+    foodItemsDescription: '',
+    message: '',
+  });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, donationsRes] = await Promise.all([
+      const [statsRes, donationsRes, requestsRes, interestsRes] = await Promise.all([
         api.get('/stats/donor?period=month'),
         api.get('/donations/my?limit=20&period=month'),
+        api.get('/requests'),
+        api.get('/requests/my-interests'),
       ]);
       setStats(statsRes.data.stats);
       setDonations(donationsRes.data.donations);
+      setCommunityRequests(requestsRes.data.requests || []);
+      setMyInterests(interestsRes.data.interests || []);
     } catch (err) {
       console.error('Dashboard error:', err);
     } finally {
@@ -53,13 +69,25 @@ const DonorDashboard = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleAssign = async (donation) => {
-    if (!window.confirm('Confirm pickup assignment for this donation?')) return;
+  const handlePledgeInterest = async (e) => {
+    e.preventDefault();
     try {
-      await api.post(`/donations/${donation._id}/assign`);
+      await api.post(`/requests/${selectedRequest.id}/interest`, pledgeForm);
+      alert('Thank you! Your interest has been sent to the NGO.');
+      setInterestModal(false);
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to assign');
+      alert(err.response?.data?.message || 'Failed to submit interest');
+    }
+  };
+
+  const handleAssign = async (donation) => {
+    if (!window.confirm('Confirm pickup assurance for this donation?')) return;
+    try {
+      await api.post(`/donations/${donation._id}/confirm-pickup`);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to confirm pickup');
     }
   };
 
@@ -74,6 +102,7 @@ const DonorDashboard = () => {
     { value: 'requested', label: 'Requested', count: donations.filter((d) => d.status === 'requested').length },
     { value: 'assigned', label: 'Assigned', count: donations.filter((d) => d.status === 'assigned').length },
     { value: 'completed', label: 'Completed', count: donations.filter((d) => d.status === 'completed').length },
+    { value: 'interests', label: 'My Pledges', count: myInterests.length },
   ];
 
   return (
@@ -224,8 +253,163 @@ const DonorDashboard = () => {
                       ))}
                     </div>
                   )}
+
+                  {/* My Pledges view */}
+                  {activeTab === 'interests' && (
+                    <div className="space-y-3">
+                      {myInterests.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic text-center py-8">You haven't submitted any donation pledges yet.</p>
+                      ) : (
+                        myInterests.map((interest) => (
+                          <div key={interest.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-gray-800 text-sm">{interest.request?.title}</h4>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${interest.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : interest.status === 'declined' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                  {interest.status}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-0.5">NGO: {interest.request?.ngo?.organizationName || interest.request?.ngo?.name}</p>
+                              <p className="text-xs text-emerald-800 font-medium mt-1">
+                                {interest.supportType === 'food' ? `Pledged: ${interest.foodItemsDescription || `${interest.pledgedQuantity} servings`}` : `Pledged Amount: ₹${interest.pledgedAmount}`}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Community Food Requests (NGO Needs) */}
+              <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-red-500" />
+                      NGO Community Food Requests
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">Verified NGOs seeking meals or urgent food supplies in your community</p>
+                  </div>
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    {communityRequests.length} Active Requests
+                  </span>
+                </div>
+
+                {communityRequests.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">No community requests open in your area right now.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {communityRequests.slice(0, 4).map((req) => (
+                      <div key={req.id} className="p-4 bg-emerald-50/40 rounded-xl border border-emerald-100/80 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-bold text-gray-800 text-sm">{req.title}</h4>
+                            <p className="text-[11px] text-gray-500">By <strong>{req.ngo?.organizationName || req.ngo?.name}</strong> · {req.city}</p>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${req.urgency === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {req.urgency}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 line-clamp-2">{req.description}</p>
+                        <div className="flex items-center justify-between pt-2 border-t border-emerald-100 text-xs">
+                          <span className="text-gray-500">Need: <strong>{req.requiredQuantity} {req.quantityUnit}</strong></span>
+                          <button
+                            onClick={() => {
+                              setSelectedRequest(req);
+                              setInterestModal(true);
+                            }}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-sm transition-all"
+                          >
+                            🤝 I Want to Donate
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Pledge Interest Modal */}
+              {interestModal && selectedRequest && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                  <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-gray-800 text-base">Support NGO Food Request</h3>
+                      <button onClick={() => setInterestModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      You are expressing interest in fulfilling or sponsoring: <strong>{selectedRequest.title}</strong>
+                    </p>
+                    <form onSubmit={handlePledgeInterest} className="space-y-3">
+                      <div>
+                        <label className="label">Support Type</label>
+                        <select
+                          value={pledgeForm.supportType}
+                          onChange={(e) => setPledgeForm({ ...pledgeForm, supportType: e.target.value })}
+                          className="input-field text-xs"
+                        >
+                          <option value="food">Provide Prepared or Packaged Food</option>
+                          <option value="money">Sponsor Meals (Monetary Support)</option>
+                        </select>
+                      </div>
+
+                      {pledgeForm.supportType === 'food' ? (
+                        <>
+                          <div>
+                            <label className="label">Pledged Quantity (servings / portions)</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={pledgeForm.pledgedQuantity}
+                              onChange={(e) => setPledgeForm({ ...pledgeForm, pledgedQuantity: e.target.value })}
+                              className="input-field text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="label">Food Description</label>
+                            <input
+                              value={pledgeForm.foodItemsDescription}
+                              onChange={(e) => setPledgeForm({ ...pledgeForm, foodItemsDescription: e.target.value })}
+                              placeholder="e.g. 50 veg rice plates, packaged breads"
+                              className="input-field text-xs"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <label className="label">Pledged Amount (₹)</label>
+                          <input
+                            type="number"
+                            min="100"
+                            value={pledgeForm.pledgedAmount}
+                            onChange={(e) => setPledgeForm({ ...pledgeForm, pledgedAmount: e.target.value })}
+                            placeholder="e.g. 1500"
+                            className="input-field text-xs"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="label">Note for NGO</label>
+                        <textarea
+                          rows="2"
+                          value={pledgeForm.message}
+                          onChange={(e) => setPledgeForm({ ...pledgeForm, message: e.target.value })}
+                          placeholder="Available times, contact instructions..."
+                          className="input-field text-xs resize-none"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button type="button" onClick={() => setInterestModal(false)} className="px-3 py-1.5 text-xs text-gray-600">Cancel</button>
+                        <button type="submit" className="btn-primary text-xs px-4 py-1.5">Submit Donation Offer</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
 
               {/* Impact tip */}
               <div className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl p-5 flex items-start gap-4">
