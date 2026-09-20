@@ -298,11 +298,10 @@ const NGODashboard = () => {
 
           {/* Verification Status Warning / Explanation Banner */}
           {user?.verificationStatus !== 'verified' && (
-            <div className={`mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-              user?.verificationStatus === 'rejected'
+            <div className={`mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${user?.verificationStatus === 'rejected'
                 ? 'bg-red-50 border-red-200 text-red-900'
                 : 'bg-amber-50 border-amber-200 text-amber-900'
-            }`}>
+              }`}>
               <div className="flex items-start gap-3">
                 {user?.verificationStatus === 'rejected' ? (
                   <ShieldAlert className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
@@ -364,56 +363,51 @@ const NGODashboard = () => {
           {/* Tabs */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-800">NGO Workspace</h2>
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full font-bold ${
-                      user?.verificationStatus === 'verified'
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : user?.verificationStatus === 'rejected'
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-gray-800">NGO Workspace</h2>
+                <span
+                  className={`text-xs px-2.5 py-1 rounded-full font-bold ${user?.verificationStatus === 'verified'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : user?.verificationStatus === 'rejected'
                         ? 'bg-red-100 text-red-700'
                         : 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
                     }`}
-                  >
-                    {user?.verificationStatus === 'verified' && '🟢 Verified NGO'}
-                    {user?.verificationStatus === 'pending' && '🟡 Verification Pending'}
-                    {user?.verificationStatus === 'rejected' && '🔴 Verification Rejected'}
-                  </span>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <button
-                    onClick={() => setActiveView('available')}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                      activeView === 'available' ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                >
+                  {user?.verificationStatus === 'verified' && '🟢 Verified NGO'}
+                  {user?.verificationStatus === 'pending' && '🟡 Verification Pending'}
+                  {user?.verificationStatus === 'rejected' && '🔴 Verification Rejected'}
+                </span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setActiveView('available')}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${activeView === 'available' ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
-                  >
-                    Available ({availableDonations.length})
-                  </button>
-                  <button
-                    onClick={() => setActiveView('my')}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                      activeView === 'my' ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                >
+                  Available ({availableDonations.length})
+                </button>
+                <button
+                  onClick={() => setActiveView('my')}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${activeView === 'my' ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
-                  >
-                    My Pickups ({myPickups.length})
-                  </button>
-                  <button
-                    onClick={() => setActiveView('requests')}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                      activeView === 'requests' ? 'bg-emerald-700 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                >
+                  My Pickups ({myPickups.length})
+                </button>
+                <button
+                  onClick={() => setActiveView('requests')}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${activeView === 'requests' ? 'bg-emerald-700 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
-                  >
-                    Community Requests ({communityRequests.length})
-                  </button>
-                  <button
-                    onClick={() => setActiveView('interests')}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                      activeView === 'interests' ? 'bg-amber-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                >
+                  Community Requests ({communityRequests.length})
+                </button>
+                <button
+                  onClick={() => setActiveView('interests')}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${activeView === 'interests' ? 'bg-amber-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
-                  >
-                    Interested Donors ({donorInterests.length})
-                  </button>
-                </div>
+                >
+                  Interested Donors ({donorInterests.length})
+                </button>
+              </div>
             </div>
 
             <div className="p-6">
@@ -451,11 +445,10 @@ const NGODashboard = () => {
                         <button
                           key={f.id}
                           onClick={() => setSafetyFilter(f.id)}
-                          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
-                            safetyFilter === f.id
+                          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${safetyFilter === f.id
                               ? 'bg-gray-800 text-white shadow-sm'
                               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
+                            }`}
                         >
                           {f.label}
                         </button>
@@ -599,95 +592,95 @@ const NGODashboard = () => {
                 </div>
               )}
 
-                  {/* Community Requests View */}
-                  {activeView === 'requests' && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">Post meal and supplies requests for community donors to fulfill.</p>
-                        <button
-                          onClick={() => setNewRequestModal(true)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
-                        >
-                          + Post New Request
-                        </button>
-                      </div>
+              {/* Community Requests View */}
+              {activeView === 'requests' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500">Post meal and supplies requests for community donors to fulfill.</p>
+                    <button
+                      onClick={() => setNewRequestModal(true)}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
+                    >
+                      + Post New Request
+                    </button>
+                  </div>
 
-                      {communityRequests.length === 0 ? (
-                        <div className="text-center py-12 bg-gray-50 rounded-xl">
-                          <UtensilsCrossed className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                          <p className="text-gray-600 font-semibold text-sm">No community food requests active</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {communityRequests.map((req) => (
-                            <div key={req.id} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm space-y-2">
-                              <div className="flex items-start justify-between">
-                                <h4 className="font-bold text-gray-800 text-sm">{req.title}</h4>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${req.urgency === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                                  {req.urgency}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-600">{req.description}</p>
-                              <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
-                                <span>Required: <strong>{req.requiredQuantity} {req.quantityUnit}</strong></span>
-                                <span>Beneficiaries: ~{req.targetBeneficiaries}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                  {communityRequests.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl">
+                      <UtensilsCrossed className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-600 font-semibold text-sm">No community food requests active</p>
                     </div>
-                  )}
-
-                  {/* Interested Donors Management View */}
-                  {activeView === 'interests' && (
-                    <div className="space-y-3">
-                      {donorInterests.length === 0 ? (
-                        <div className="text-center py-12 bg-gray-50 rounded-xl">
-                          <Heart className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                          <p className="text-gray-600 font-semibold text-sm">No donor interest pledges yet</p>
-                          <p className="text-xs text-gray-400 mt-0.5">When donors click "I Want to Donate" on your requests, they will appear here.</p>
-                        </div>
-                      ) : (
-                        donorInterests.map((interest) => (
-                          <div key={interest.id} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-bold text-gray-800 text-sm">{interest.donor?.organizationName || interest.donor?.name}</h4>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${interest.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : interest.status === 'declined' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                                  {interest.status}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                For request: <strong>{interest.request?.title}</strong>
-                              </p>
-                              <p className="text-xs text-emerald-800 font-medium mt-1">
-                                {interest.supportType === 'food' ? `📦 Pledged Food: ${interest.foodItemsDescription || `${interest.pledgedQuantity} servings`}` : `💰 Support Amount: ₹${interest.pledgedAmount}`}
-                              </p>
-                              {interest.message && <p className="text-xs text-gray-600 italic mt-0.5">"{interest.message}"</p>}
-                            </div>
-
-                            {interest.status === 'interested' && (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleInterestStatus(interest.id, 'accepted')}
-                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold"
-                                >
-                                  Accept Offer
-                                </button>
-                                <button
-                                  onClick={() => handleInterestStatus(interest.id, 'declined')}
-                                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-bold"
-                                >
-                                  Decline
-                                </button>
-                              </div>
-                            )}
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {communityRequests.map((req) => (
+                        <div key={req.id} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm space-y-2">
+                          <div className="flex items-start justify-between">
+                            <h4 className="font-bold text-gray-800 text-sm">{req.title}</h4>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${req.urgency === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                              {req.urgency}
+                            </span>
                           </div>
-                        ))
-                      )}
+                          <p className="text-xs text-gray-600">{req.description}</p>
+                          <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+                            <span>Required: <strong>{req.requiredQuantity} {req.quantityUnit}</strong></span>
+                            <span>Beneficiaries: ~{req.targetBeneficiaries}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Interested Donors Management View */}
+              {activeView === 'interests' && (
+                <div className="space-y-3">
+                  {donorInterests.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl">
+                      <Heart className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-600 font-semibold text-sm">No donor interest pledges yet</p>
+                      <p className="text-xs text-gray-400 mt-0.5">When donors click "I Want to Donate" on your requests, they will appear here.</p>
+                    </div>
+                  ) : (
+                    donorInterests.map((interest) => (
+                      <div key={interest.id} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-gray-800 text-sm">{interest.donor?.organizationName || interest.donor?.name}</h4>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${interest.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : interest.status === 'declined' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                              {interest.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            For request: <strong>{interest.request?.title}</strong>
+                          </p>
+                          <p className="text-xs text-emerald-800 font-medium mt-1">
+                            {interest.supportType === 'food' ? `📦 Pledged Food: ${interest.foodItemsDescription || `${interest.pledgedQuantity} servings`}` : `💰 Support Amount: ₹${interest.pledgedAmount}`}
+                          </p>
+                          {interest.message && <p className="text-xs text-gray-600 italic mt-0.5">"{interest.message}"</p>}
+                        </div>
+
+                        {interest.status === 'interested' && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleInterestStatus(interest.id, 'accepted')}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold"
+                            >
+                              Accept Offer
+                            </button>
+                            <button
+                              onClick={() => handleInterestStatus(interest.id, 'declined')}
+                              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-bold"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Post Request Modal */}

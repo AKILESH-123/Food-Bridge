@@ -144,15 +144,11 @@ const Register = () => {
       navigate(path, { replace: true });
     } catch (err) {
       const errs = err.response?.data?.errors;
-      let msg = 'Registration failed. Please try again.';
       if (errs && Array.isArray(errs)) {
-        msg = errs.map((e) => e.msg).join(', ');
-      } else if (err.response?.data?.message) {
-        msg = err.response.data.message;
+        setError(errs.map((e) => e.msg).join(', '));
+      } else {
+        setError(err.response?.data?.message || 'Registration failed. Please try again.');
       }
-      setError(msg);
-      import('react-hot-toast').then(({ default: toast }) => toast.error(msg));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }

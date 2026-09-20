@@ -84,11 +84,18 @@ const CreateDonation = () => {
     const files = Array.from(e.target.files).slice(0, 5);
     setImages(files);
     setImagePreviews(files.map((f) => URL.createObjectURL(f)));
+    if (files.length > 0 && errors.images) {
+      setErrors((prev) => ({ ...prev, images: '' }));
+    }
   };
 
   const removeImage = (idx) => {
-    setImages((prev) => prev.filter((_, i) => i !== idx));
+    const updatedImages = images.filter((_, i) => i !== idx);
+    setImages(updatedImages);
     setImagePreviews((prev) => prev.filter((_, i) => i !== idx));
+    if (updatedImages.length === 0) {
+      setErrors((prev) => ({ ...prev, images: 'At least one photo of the food is required' }));
+    }
   };
 
   const validate = () => {
@@ -108,6 +115,7 @@ const CreateDonation = () => {
     if (!form.storageMethod) errs.storageMethod = 'Please select storage method';
     if (!form.ingredients.trim()) errs.ingredients = 'Ingredients list is required for safety verification';
     if (!form.preparedAt) errs.preparedAt = 'Cooking / preparation time is required';
+    if (!images || images.length === 0) errs.images = 'At least one photo of the food is required';
     return errs;
   };
 
@@ -524,20 +532,25 @@ const CreateDonation = () => {
 
           {/* Photos */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-bold text-gray-800 mb-5 flex items-center gap-2">
-              <Upload className="w-5 h-5 text-blue-500" />
-              Photos (Optional)
+            <h2 className="font-bold text-gray-800 mb-5 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Upload className="w-5 h-5 text-blue-500" />
+                Food Photos <span className="text-red-500">*</span>
+              </span>
+              <span className="text-xs font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-200">
+                Compulsory
+              </span>
             </h2>
 
             {imagePreviews.length > 0 && (
               <div className="flex flex-wrap gap-3 mb-4">
                 {imagePreviews.map((src, i) => (
                   <div key={i} className="relative">
-                    <img src={src} alt="" className="w-20 h-20 object-cover rounded-xl border border-gray-200" />
+                    <img src={src} alt="" className="w-20 h-20 object-cover rounded-xl border border-gray-200 shadow-sm" />
                     <button
                       type="button"
                       onClick={() => removeImage(i)}
-                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs shadow hover:bg-red-600"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -547,11 +560,23 @@ const CreateDonation = () => {
             )}
 
             {imagePreviews.length < 5 && (
-              <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-green-400 hover:bg-green-50 transition-all">
-                <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-500">Click to upload photos (max 5, 5MB each)</span>
+              <label className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                errors.images
+                  ? 'border-red-400 bg-red-50/50 hover:bg-red-50'
+                  : 'border-gray-200 hover:border-green-400 hover:bg-green-50'
+              }`}>
+                <Upload className={`w-6 h-6 mb-2 ${errors.images ? 'text-red-400' : 'text-gray-400'}`} />
+                <span className={`text-sm ${errors.images ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                  Click to upload food photos (required, max 5, 5MB each)
+                </span>
                 <input type="file" multiple accept="image/*" onChange={handleImages} className="hidden" />
               </label>
+            )}
+
+            {errors.images && (
+              <p className="text-red-500 text-xs mt-2 font-medium flex items-center gap-1">
+                ⚠️ {errors.images}
+              </p>
             )}
           </div>
 

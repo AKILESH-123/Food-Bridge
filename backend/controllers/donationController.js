@@ -63,6 +63,13 @@ exports.createDonation = async (req, res) => {
       storageMethod, ingredients, safeUseHours,
     } = req.body;
 
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one photo of the food is compulsory to verify safety and food condition.',
+      });
+    }
+
     const donationData = {
       donorId: req.user.id,
       title, description, category,
